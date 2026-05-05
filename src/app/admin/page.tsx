@@ -10,7 +10,10 @@ const QUICK_LINKS = [
   { href: "/admin/ai-config", label: "AI Mentor Config" },
   { href: "/admin/ai-context", label: "AI Context Packs" },
   { href: "/admin/achievements", label: "Achievements" },
+  { href: "/admin/certificates", label: "Certificates" },
   { href: "/admin/students", label: "Students" },
+  { href: "/admin/parent-reports", label: "Parent Reports" },
+  { href: "/admin/growth-timeline", label: "Growth Timeline" },
   { href: "/admin/summaries", label: "Weekly Summaries" },
   { href: "/admin/analytics", label: "Analytics" },
 ];
