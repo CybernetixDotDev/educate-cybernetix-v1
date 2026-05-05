@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/admin/coaching", label: "Coaching AI" },
   { href: "/admin/certificates", label: "Certificates" },
   { href: "/admin/achievements", label: "Achievements" },
+  { href: "/admin/roles", label: "Roles" },
   { href: "/admin/students", label: "Students" },
   { href: "/admin/summaries", label: "Weekly Summaries" },
   { href: "/admin/analytics", label: "Analytics" },
