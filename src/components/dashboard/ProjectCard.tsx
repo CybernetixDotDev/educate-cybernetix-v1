@@ -3,10 +3,12 @@
 import { useLessonProgress, type LessonProgress } from "@/hooks/useLessonProgress";
 import { useProjectProgress, type ProjectTask } from "@/hooks/useProjectProgress";
 import { useStudent } from "@/hooks/useStudent";
+import { StudentTopNav } from "@/components/layout/StudentTopNav";
 import Link from "next/link";
 import { useMemo } from "react";
 import { MentorQuickPanel } from "./MentorQuickPanel";
 import { ProgressBar } from "./ProgressBar";
+import { QuickToolsGrid } from "./QuickToolsGrid";
 import { SkillChart, type SkillKey, type SkillScore } from "./SkillChart";
 
 const TOTAL_LESSONS = 12;
@@ -73,6 +75,11 @@ function getNextLesson(progress: LessonProgress[], currentWeek: number) {
   return `Week ${Math.min(currentWeek + 1, TOTAL_LESSONS)} lesson`;
 }
 
+function getNextLessonHref(progress: LessonProgress[]) {
+  const nextIncomplete = progress.find((item) => item.status !== "completed" && item.progress_percent < 100);
+  return nextIncomplete ? `/learn/${nextIncomplete.module_key}/${nextIncomplete.lesson_key}` : "/learn";
+}
+
 function getSkillScores(progress: LessonProgress[]): SkillScore[] {
   return SKILLS.map((skill) => {
     const matching = progress.filter((item) => skill.modules.some((module) => item.module_key.startsWith(module)));
@@ -87,6 +94,44 @@ function getSkillScores(progress: LessonProgress[]): SkillScore[] {
       value,
     };
   });
+}
+
+function RecentActivity({ progress, tasks }: { progress: LessonProgress[]; tasks: ProjectTask[] }) {
+  const recentLessons = progress
+    .filter((item) => item.completed_at || item.updated_at)
+    .sort((a, b) => Date.parse(b.completed_at ?? b.updated_at ?? "") - Date.parse(a.completed_at ?? a.updated_at ?? ""))
+    .slice(0, 3);
+  const recentTasks = tasks.filter((task) => task.status === "completed").slice(0, 2);
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-wide text-violet-600">Recent Activity</p>
+        <h2 className="mt-1 text-xl font-semibold text-slate-950">What moved forward</h2>
+      </div>
+      <div className="mt-5 space-y-3">
+        {recentLessons.length === 0 && recentTasks.length === 0 && (
+          <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">
+            Start a lesson or complete a project task and your activity will appear here.
+          </p>
+        )}
+        {recentLessons.map((lesson) => (
+          <div key={lesson.id} className="rounded-lg border border-slate-200 p-3">
+            <p className="text-sm font-semibold text-slate-900">{lesson.lesson_title ?? lesson.lesson_key}</p>
+            <p className="mt-1 text-xs text-slate-500">
+              {lesson.status === "completed" ? "Lesson completed" : `${lesson.progress_percent}% complete`}
+            </p>
+          </div>
+        ))}
+        {recentTasks.map((task) => (
+          <div key={task.id} className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+            <p className="text-sm font-semibold text-emerald-950">{task.title}</p>
+            <p className="mt-1 text-xs text-emerald-700">Project task completed</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 type ProjectCardProps = {
@@ -109,7 +154,7 @@ export function ProjectCard({ title, tasks, loading = false, error = null, onCom
           <h2 className="mt-1 text-xl font-semibold text-slate-950">{title}</h2>
         </div>
         <Link
-          href="/projects"
+          href="/project-mentor"
           className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
           Continue Project
@@ -176,6 +221,7 @@ export function DashboardContent() {
   const overallProgress = Math.round((completedLessons / TOTAL_LESSONS) * 100);
   const streakDays = useMemo(() => getStreakDays(progress), [progress]);
   const nextLesson = useMemo(() => getNextLesson(progress, currentWeek), [currentWeek, progress]);
+  const nextLessonHref = useMemo(() => getNextLessonHref(progress), [progress]);
   const skills = useMemo(() => getSkillScores(progress), [progress]);
   const activeModuleId = `week${currentWeek}`;
 
@@ -212,91 +258,99 @@ export function DashboardContent() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-lg bg-slate-950 text-white shadow-sm">
-          <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Student Dashboard</p>
-              <h1 className="mt-3 text-3xl font-bold sm:text-4xl">Welcome back, {student.display_name}</h1>
-              <p className="mt-3 max-w-2xl text-base text-slate-300">
-                You are on Week {currentWeek}. Keep the next task small, ship one improvement, and ask the mentor
-                when you get stuck.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:min-w-72">
-              <div className="rounded-lg bg-white/10 p-4">
-                <p className="text-sm text-slate-300">Current week</p>
-                <p className="mt-1 text-3xl font-bold">{currentWeek}</p>
-              </div>
-              <div className="rounded-lg bg-white/10 p-4">
-                <p className="text-sm text-slate-300">Streak</p>
-                <p className="mt-1 text-3xl font-bold">{streakDays}d</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="min-h-screen bg-slate-50 text-slate-950 lg:flex">
+      <StudentTopNav studentName={student.display_name} avatarUrl={student.avatar_url} />
+      <main className="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <section className="overflow-hidden rounded-lg bg-slate-950 text-white shadow-sm">
+            <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
-                <h2 className="text-xl font-semibold text-slate-950">Overall Progress</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  {completedLessons} of {TOTAL_LESSONS} lessons completed
+                <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Student Dashboard</p>
+                <h1 className="mt-3 text-3xl font-bold sm:text-4xl">Welcome back, {student.display_name}</h1>
+                <p className="mt-3 max-w-2xl text-base text-slate-300">
+                  You are on Week {currentWeek}. Keep the next task small, ship one improvement, and ask the mentor
+                  when you get stuck.
                 </p>
               </div>
-              <Link
-                href="/learn"
-                className="rounded-md bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700"
-              >
-                Next Lesson
-              </Link>
-            </div>
-            <div className="mt-6">
-              <ProgressBar value={overallProgress} label="Course completion" tone="cyan" />
-            </div>
-            <div className="mt-4 rounded-lg bg-cyan-50 p-4 text-sm text-cyan-900">
-              Next up: <span className="font-semibold">{nextLesson}</span>
-            </div>
-            {progressError && (
-              <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
-                <span>{progressError}</span>
-                <button type="button" onClick={() => void refreshProgress()} className="font-semibold">
-                  Retry
-                </button>
+              <div className="grid grid-cols-2 gap-3 sm:min-w-72">
+                <div className="rounded-lg bg-white/10 p-4">
+                  <p className="text-sm text-slate-300">Current week</p>
+                  <p className="mt-1 text-3xl font-bold">{currentWeek}</p>
+                </div>
+                <div className="rounded-lg bg-white/10 p-4">
+                  <p className="text-sm text-slate-300">Streak</p>
+                  <p className="mt-1 text-3xl font-bold">{streakDays}d</p>
+                </div>
               </div>
-            )}
-            {progressLoading && <p className="mt-4 text-sm text-slate-500">Refreshing progress...</p>}
-          </div>
-
-          <MentorQuickPanel studentId={student.id} moduleId={activeModuleId} />
-        </section>
-
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold text-slate-950">Skill Mastery</h2>
-              <p className="mt-1 text-sm text-slate-500">Based on your completed lessons and current progress.</p>
             </div>
-          </div>
-          <div className="mt-5">
-            <SkillChart skills={skills} />
-          </div>
-        </section>
+          </section>
 
-        <ProjectCard
-          title={project?.title ?? "No project selected yet"}
-          tasks={tasks}
-          loading={projectLoading}
-          error={projectError}
-          onCompleteTask={async (taskId) => {
-            const result = await completeTask(taskId);
-            await refreshProject();
-            return result;
-          }}
-        />
-      </div>
-    </main>
+          <QuickToolsGrid />
+
+          <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-950">Overall Progress</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {completedLessons} of {TOTAL_LESSONS} lessons completed
+                  </p>
+                </div>
+                <Link
+                  href={nextLessonHref}
+                  className="rounded-md bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700"
+                >
+                  Next Lesson
+                </Link>
+              </div>
+              <div className="mt-6">
+                <ProgressBar value={overallProgress} label="Course completion" tone="cyan" />
+              </div>
+              <div className="mt-4 rounded-lg bg-cyan-50 p-4 text-sm text-cyan-900">
+                Next up: <span className="font-semibold">{nextLesson}</span>
+              </div>
+              {progressError && (
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
+                  <span>{progressError}</span>
+                  <button type="button" onClick={() => void refreshProgress()} className="font-semibold">
+                    Retry
+                  </button>
+                </div>
+              )}
+              {progressLoading && <p className="mt-4 text-sm text-slate-500">Refreshing progress...</p>}
+            </div>
+
+            <MentorQuickPanel studentId={student.id} moduleId={activeModuleId} />
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-[1fr_0.75fr]">
+            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-950">Skill Mastery</h2>
+                  <p className="mt-1 text-sm text-slate-500">Based on your completed lessons and current progress.</p>
+                </div>
+              </div>
+              <div className="mt-5">
+                <SkillChart skills={skills} />
+              </div>
+            </div>
+            <RecentActivity progress={progress} tasks={tasks} />
+          </section>
+
+          <ProjectCard
+            title={project?.title ?? "No project selected yet"}
+            tasks={tasks}
+            loading={projectLoading}
+            error={projectError}
+            onCompleteTask={async (taskId) => {
+              const result = await completeTask(taskId);
+              await refreshProject();
+              return result;
+            }}
+          />
+        </div>
+      </main>
+    </div>
   );
 }

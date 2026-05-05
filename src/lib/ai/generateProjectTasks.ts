@@ -1,6 +1,8 @@
 "use server";
 
-import { compileMentorPrompt } from "@/lib/mentor/promptCompiler";
+import { compilePrompt } from "@/lib/ai/compilePrompt";
+import { getModel } from "@/lib/ai/getModel";
+import { callJsonLLM } from "@/lib/ai/provider";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 
@@ -121,7 +123,7 @@ function buildPrompt(
     ],
   };
 
-  return compileMentorPrompt({
+  return compilePrompt({
     student_id: isRecord(context.project) && typeof context.project.student_id === "string" ? context.project.student_id : "project-mentor",
     mode: "builder",
     module_id: "project-mentor",
@@ -154,39 +156,13 @@ function buildPrompt(
   });
 }
 
-async function callLlm(prompt: string, aiConfig: Record<string, unknown>) {
-  const apiKey = process.env.AI_PROVIDER_API_KEY ?? process.env.OPENAI_API_KEY;
-  const endpoint = process.env.AI_PROVIDER_URL ?? "https://api.openai.com/v1/chat/completions";
-  const model = typeof aiConfig.model === "string" ? aiConfig.model : "gpt-4.1-mini";
-
-  if (!apiKey) throw new Error("AI provider API key is not configured");
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      temperature: 0.35,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: "You generate practical project mentor task JSON. Return JSON only." },
-        { role: "user", content: prompt },
-      ],
-    }),
-  });
-
-  if (!response.ok) throw new Error(`AI provider failed with ${response.status}: ${(await response.text()).slice(0, 500)}`);
-  const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  const content = payload.choices?.[0]?.message?.content;
-  if (!content) throw new Error("AI provider returned an empty project task list");
-  return JSON.parse(content) as unknown;
-}
 
 export async function generateProjectTasks(input: ProjectTaskGenerationInput): Promise<ProjectTaskGenerationResult> {
   try {
     if (!input.project_id) throw new Error("project_id is required");
     const context = await fetchProjectContext(input);
-    const raw = await callLlm(buildPrompt(input, context), context.aiConfig);
+    const model = await getModel("json", context.aiConfig);
+    const raw = await callJsonLLM(model, buildPrompt(input, context));
     return { ok: true, taskList: normalizeProjectTasks(raw, input), error: null };
   } catch (error) {
     return {
@@ -199,6 +175,7 @@ export async function generateProjectTasks(input: ProjectTaskGenerationInput): P
 
 export async function generateProjectTask(input: ProjectTaskGenerationInput, selectedTask: GeneratedProjectTask) {
   const context = await fetchProjectContext(input);
-  const raw = await callLlm(buildPrompt(input, context, selectedTask), context.aiConfig);
+  const model = await getModel("json", context.aiConfig);
+    const raw = await callJsonLLM(model, buildPrompt(input, context, selectedTask));
   return normalizeProjectTasks(raw, input);
 }

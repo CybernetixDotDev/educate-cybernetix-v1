@@ -1,20 +1,27 @@
-import { AIInsightsCard } from "@/components/parent-dashboard/AIInsightsCard";
-import { EngagementChart, type DailyEngagement, type WeeklyEngagement } from "@/components/parent-dashboard/EngagementChart";
-import { ParentHeader } from "@/components/parent-dashboard/ParentHeader";
-import { ProjectProgressCard, type ProjectMilestone } from "@/components/parent-dashboard/ProjectProgressCard";
-import { SkillMasteryChart, type SkillMastery } from "@/components/parent-dashboard/SkillMasteryChart";
+import { AiParentInsight } from "@/components/parent-dashboard/AiParentInsight";
+import { EngagementAnalytics } from "@/components/parent-dashboard/EngagementAnalytics";
+import { ParentDashboardLayout } from "@/components/parent-dashboard/ParentDashboardLayout";
+import { ProjectProgressOverview } from "@/components/parent-dashboard/ProjectProgressOverview";
+import { RecommendedGuidance } from "@/components/parent-dashboard/RecommendedGuidance";
+import { SkillMasterySnapshot, type ParentSkillScore } from "@/components/parent-dashboard/SkillMasterySnapshot";
+import { StudentSelector, type LinkedStudentOption } from "@/components/parent-dashboard/StudentSelector";
 import { WeeklySummaryCard } from "@/components/parent-dashboard/WeeklySummaryCard";
-import { requireRole } from "@/lib/auth/roles";
+import { dashboardPathForRole, getCurrentUserRole } from "@/lib/auth/roles";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+type ParentDashboardPageProps = {
+  searchParams: Promise<{ studentId?: string }>;
+};
+
 type Student = {
   id: string;
-  user_id: string | null;
   display_name: string;
-  parent_email: string | null;
+  email: string | null;
+  grade_level: string | null;
 };
 
 type WeeklySummary = {
@@ -24,32 +31,30 @@ type WeeklySummary = {
   quizzes_completed: number;
   average_quiz_score: number | null;
   time_spent_seconds: number;
-  achievements_awarded: string[];
   highlights: string[];
   concerns: string[];
   summary: Record<string, unknown>;
 };
 
-type AnalyticsSnapshot = {
-  snapshot_type: string;
-  metrics: Record<string, unknown>;
-  dimensions: Record<string, unknown>;
-  period_start: string;
-  period_end: string;
+type SessionLog = {
+  id: string;
+  duration_seconds: number;
+  session_started_at: string;
 };
 
-type SessionLog = {
-  session_started_at: string;
-  session_ended_at: string | null;
-  duration_seconds: number;
+type Streak = {
+  current_count: number;
+  longest_count: number;
+  last_activity_date: string | null;
 };
 
 type QuizResult = {
+  id: string;
   module_key: string | null;
   lesson_key: string | null;
   score: number;
   passed: boolean;
-  created_at: string;
+  completed_at: string;
 };
 
 type ProjectTask = {
@@ -60,15 +65,25 @@ type ProjectTask = {
   updated_at: string;
 };
 
-type StudentProject = {
+type Project = {
   id: string;
   title: string;
+  description: string | null;
   status: string;
-  repository_url: string | null;
-  demo_url: string | null;
-  project_data: Record<string, unknown>;
   updated_at: string;
   project_tasks?: ProjectTask[];
+};
+
+type AnalyticsSnapshot = {
+  snapshot_type: string;
+  metrics: Record<string, unknown>;
+  generated_at: string;
+};
+
+type ParentReport = {
+  month: string;
+  report_json: Record<string, unknown>;
+  updated_at: string;
 };
 
 const SKILLS = [
@@ -76,391 +91,370 @@ const SKILLS = [
   { key: "css", label: "CSS", modules: ["week1", "week2"] },
   { key: "javascript", label: "JavaScript", modules: ["week4"] },
   { key: "nextjs", label: "Next.js", modules: ["week5"] },
-  { key: "apis", label: "APIs", modules: ["week6"] },
   { key: "supabase", label: "Supabase", modules: ["week7"] },
   { key: "threejs", label: "Three.js", modules: ["week8"] },
-  { key: "project_management", label: "Project Management", modules: ["week9", "week10", "week11", "week12"] },
-];
+  { key: "git", label: "Git", modules: ["week3"] },
+  { key: "apis", label: "APIs", modules: ["week6"] },
+] as const;
 
-function toStringArray(value: unknown) {
+function stringArray(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
-function toStringValue(value: unknown, fallback: string) {
-  return typeof value === "string" && value.trim() ? value : fallback;
+function text(value: unknown, fallback: string) {
+  return typeof value === "string" && value.trim().length > 0 ? value : fallback;
 }
 
-function getWeekNumber(date: string | null | undefined) {
-  if (!date) {
-    return 1;
-  }
+function numberValue(value: unknown, fallback = 0) {
+  return Number.isFinite(Number(value)) ? Number(value) : fallback;
+}
 
-  const start = new Date(new Date(date).getFullYear(), 0, 1);
+function getParentName(user: { email?: string; user_metadata?: Record<string, unknown> }) {
+  const metadataName = user.user_metadata?.display_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name;
+  if (typeof metadataName === "string" && metadataName.trim()) return metadataName.trim();
+  return user.email?.split("@")[0] ?? "Parent";
+}
+
+function currentMonth() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+function weekNumberFromDate(date: string | undefined) {
+  if (!date) return 1;
   const current = new Date(date);
-  const days = Math.floor((current.getTime() - start.getTime()) / 86_400_000);
-
-  return Math.max(1, Math.ceil((days + start.getDay() + 1) / 7));
+  const firstDay = new Date(current.getFullYear(), 0, 1);
+  const days = Math.floor((current.getTime() - firstDay.getTime()) / 86_400_000);
+  return Math.max(1, Math.ceil((days + firstDay.getDay() + 1) / 7));
 }
 
-function getLast14Days(): DailyEngagement[] {
-  const today = new Date();
-
-  return Array.from({ length: 14 }, (_, index) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - (13 - index));
-
-    return {
-      date: date.toISOString().slice(0, 10),
-      minutes: 0,
-    };
-  });
-}
-
-function buildDailyMinutes(sessionLogs: SessionLog[]) {
-  const days = getLast14Days();
-  const byDate = new Map(days.map((day) => [day.date, day.minutes]));
-
-  for (const session of sessionLogs) {
-    const date = new Date(session.session_started_at).toISOString().slice(0, 10);
-    const minutes = Math.round((session.duration_seconds ?? 0) / 60);
-
-    if (byDate.has(date)) {
-      byDate.set(date, (byDate.get(date) ?? 0) + minutes);
-    }
-  }
-
-  return days.map((day) => ({
-    ...day,
-    minutes: byDate.get(day.date) ?? 0,
-  }));
-}
-
-function buildWeeklyActivity(sessionLogs: SessionLog[]): WeeklyEngagement[] {
-  const weeks = [
-    { label: "3w ago", startOffset: 27, endOffset: 21 },
-    { label: "2w ago", startOffset: 20, endOffset: 14 },
-    { label: "Last wk", startOffset: 13, endOffset: 7 },
-    { label: "This wk", startOffset: 6, endOffset: 0 },
-  ];
-  const today = new Date();
-
-  return weeks.map((week) => {
-    const start = new Date(today);
-    start.setDate(today.getDate() - week.startOffset);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(today);
-    end.setDate(today.getDate() - week.endOffset);
-    end.setHours(23, 59, 59, 999);
-
-    const minutes = sessionLogs.reduce((sum, session) => {
-      const time = new Date(session.session_started_at).getTime();
-
-      if (time >= start.getTime() && time <= end.getTime()) {
-        return sum + Math.round((session.duration_seconds ?? 0) / 60);
-      }
-
-      return sum;
-    }, 0);
-
-    return {
-      label: week.label,
-      minutes,
-    };
-  });
-}
-
-function getCurrentWeekMinutes(sessionLogs: SessionLog[]) {
+function weeklyMinutes(sessionLogs: SessionLog[]) {
   const now = new Date();
   const start = new Date(now);
   start.setDate(now.getDate() - now.getDay());
   start.setHours(0, 0, 0, 0);
 
-  return sessionLogs.reduce((sum, session) => {
-    const time = new Date(session.session_started_at).getTime();
-    return time >= start.getTime() ? sum + Math.round((session.duration_seconds ?? 0) / 60) : sum;
+  return sessionLogs.reduce((sum, log) => {
+    const time = new Date(log.session_started_at).getTime();
+    return time >= start.getTime() ? sum + Math.round(Number(log.duration_seconds ?? 0) / 60) : sum;
   }, 0);
 }
 
-function getStreakDays(sessionLogs: SessionLog[]) {
-  const activeDates = new Set(
-    sessionLogs.map((session) => new Date(session.session_started_at).toISOString().slice(0, 10)),
-  );
-  const cursor = new Date();
-  let streak = 0;
-
-  for (;;) {
-    const key = cursor.toISOString().slice(0, 10);
-
-    if (!activeDates.has(key)) {
-      break;
-    }
-
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-
-  return streak;
+function daysActive(sessionLogs: SessionLog[]) {
+  return new Set(sessionLogs.map((log) => new Date(log.session_started_at).toISOString().slice(0, 10))).size;
 }
 
-function buildSkillMastery(quizResults: QuizResult[]): SkillMastery[] {
+function dailyMinutes(sessionLogs: SessionLog[]) {
+  const today = new Date();
+  const days = Array.from({ length: 14 }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (13 - index));
+    return { date: date.toISOString().slice(0, 10), minutes: 0 };
+  });
+  const byDate = new Map(days.map((day) => [day.date, day.minutes]));
+
+  for (const log of sessionLogs) {
+    const key = new Date(log.session_started_at).toISOString().slice(0, 10);
+    if (byDate.has(key)) byDate.set(key, (byDate.get(key) ?? 0) + Math.round(Number(log.duration_seconds ?? 0) / 60));
+  }
+
+  return days.map((day) => ({ ...day, minutes: byDate.get(day.date) ?? 0 }));
+}
+
+function weeklyBars(sessionLogs: SessionLog[]) {
+  const today = new Date();
+  const labels = ["3w ago", "2w ago", "Last wk", "This wk"];
+
+  return labels.map((label, index) => {
+    const end = new Date(today);
+    end.setDate(today.getDate() - (3 - index) * 7);
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(end.getDate() - 6);
+    start.setHours(0, 0, 0, 0);
+
+    const minutes = sessionLogs.reduce((sum, log) => {
+      const time = new Date(log.session_started_at).getTime();
+      return time >= start.getTime() && time <= end.getTime()
+        ? sum + Math.round(Number(log.duration_seconds ?? 0) / 60)
+        : sum;
+    }, 0);
+
+    return { label, minutes };
+  });
+}
+
+function skillMastery(quizResults: QuizResult[], analytics: AnalyticsSnapshot[]): ParentSkillScore[] {
+  const latestSkillMetrics = analytics.find((item) => item.snapshot_type === "skill_mastery")?.metrics;
+
   return SKILLS.map((skill) => {
+    const metricValue = numberValue(latestSkillMetrics?.[skill.key], NaN);
+    if (Number.isFinite(metricValue)) return { key: skill.key, label: skill.label, value: Math.round(metricValue) };
+
     const matching = quizResults.filter((quiz) => {
       const moduleKey = quiz.module_key ?? quiz.lesson_key ?? "";
       return skill.modules.some((module) => moduleKey.startsWith(module));
     });
+
     const value =
       matching.length > 0
         ? Math.round(matching.reduce((sum, quiz) => sum + Number(quiz.score ?? 0), 0) / matching.length)
         : 0;
 
-    return {
-      key: skill.key,
-      label: skill.label,
-      value,
-    };
+    return { key: skill.key, label: skill.label, value };
   });
 }
 
-function getStrengths(skills: SkillMastery[]) {
-  return skills
-    .filter((skill) => skill.value >= 80)
-    .sort((left, right) => right.value - left.value)
-    .slice(0, 3)
-    .map((skill) => `${skill.label} (${skill.value}%)`);
-}
-
-function getAreasToImprove(skills: SkillMastery[]) {
-  return skills
-    .filter((skill) => skill.value > 0 && skill.value < 75)
-    .sort((left, right) => left.value - right.value)
-    .slice(0, 3)
-    .map((skill) => `${skill.label} (${skill.value}%)`);
-}
-
-function getProjectProgress(project: StudentProject | null) {
+function projectProgress(project: Project | null) {
   const tasks = project?.project_tasks ?? [];
-  const completed = tasks.filter((task) => task.status === "completed").length;
-
-  return tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
+  const completed = tasks.filter((task) => task.status === "completed" || task.status === "done").length;
+  return {
+    completed,
+    total: tasks.length,
+    percent: tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0,
+  };
 }
 
-function getMilestones(project: StudentProject | null): ProjectMilestone[] {
-  return (project?.project_tasks ?? []).map((task) => ({
-    id: task.id,
-    title: task.title,
-    status: task.status,
-    completedAt: task.completed_at,
-  }));
+function buildInsights(report: ParentReport | null, summary: WeeklySummary | null, analytics: AnalyticsSnapshot[]) {
+  const reportJson = report?.report_json ?? {};
+  const summaryJson = summary?.summary ?? {};
+  const analyticsInsight = analytics.find((item) => typeof item.metrics?.insight === "string")?.metrics.insight;
+
+  return [
+    ...stringArray(reportJson.recommendations).slice(0, 1),
+    text(summaryJson.ai_commentary, ""),
+    text(analyticsInsight, ""),
+  ].filter(Boolean).slice(0, 2);
 }
 
-function getProjectUpdates(project: StudentProject | null) {
-  const completed = (project?.project_tasks ?? [])
-    .filter((task) => task.status === "completed")
-    .slice(0, 3)
-    .map((task) => `${task.title} completed`);
-
-  if (completed.length > 0) {
-    return completed;
-  }
-
-  return project ? [`${project.title} is in ${project.status.replaceAll("_", " ")} status`] : [];
+function buildGuidance({
+  studentName,
+  streak,
+  project,
+  projectOpenTasks,
+  minutesThisWeek,
+}: {
+  studentName: string;
+  streak: number;
+  project: Project | null;
+  projectOpenTasks: number;
+  minutesThisWeek: number;
+}) {
+  return [
+    project
+      ? `Ask ${studentName} to explain the project idea and one feature they are most proud of.`
+      : `Ask ${studentName} which project idea feels most exciting to build first.`,
+    projectOpenTasks > 0
+      ? `Encourage one short build session focused on finishing a single project task.`
+      : "Celebrate the current project momentum and ask what they want to improve next.",
+    streak > 0
+      ? `Celebrate the ${streak}-day streak this week. Specific praise helps confidence stick.`
+      : minutesThisWeek > 0
+        ? "Praise the minutes already completed and help choose the next small session."
+        : "Suggest a calm 10-minute learning session to restart momentum without pressure.",
+  ];
 }
 
-async function ParentDashboardContent() {
-  const role = await requireRole(["parent", "admin"]);
+async function ParentDashboardContent({ selectedStudentId }: { selectedStudentId?: string }) {
+  const role = await getCurrentUserRole();
 
-  if (!role) {
-    redirect("/auth?next=/parent/dashboard");
-  }
+  if (!role) redirect("/auth?next=/parent/dashboard");
+  if (role !== "parent") redirect(dashboardPathForRole(role));
 
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient(await cookies());
   const { data: userResult } = await supabase.auth.getUser();
   const user = userResult.user;
+  if (!user) redirect("/auth?next=/parent/dashboard");
 
-  if (!user) {
-    return (
-      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-        <section className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold text-slate-950">Parent dashboard unavailable</h1>
-          <p className="mt-2 text-slate-600">Sign in with the parent account connected to your learner.</p>
-        </section>
-      </main>
-    );
-  }
-
-  const { data: linkedStudent } = await supabase
+  const { data: links } = await supabase
     .from("parent_students")
-    .select("students(*)")
+    .select("students(id, display_name, email, grade_level)")
     .eq("parent_user_id", user.id)
-    .limit(1)
-    .maybeSingle();
-  const relationStudent = linkedStudent?.students;
-  const student = (Array.isArray(relationStudent) ? relationStudent[0] : relationStudent) as Student | null;
+    .order("created_at", { ascending: true });
 
-  if (!student) {
+  const students = (links ?? [])
+    .map((link) => {
+      const nested = link.students;
+      return (Array.isArray(nested) ? nested[0] : nested) as Student | null;
+    })
+    .filter((student): student is Student => Boolean(student));
+
+  const selectedStudent = students.find((student) => student.id === selectedStudentId) ?? students[0] ?? null;
+
+  if (!selectedStudent) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+      <ParentDashboardLayout>
         <section className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-950">No learner linked yet</h1>
-          <p className="mt-2 text-slate-600">
-            Link this parent account to a student in the parent_students table to unlock progress reporting.
-          </p>
+          <p className="mt-2 text-slate-600">Ask an admin to link this parent account to a student profile.</p>
         </section>
-      </main>
+      </ParentDashboardLayout>
     );
   }
 
   const [
-    weeklySummaryResult,
-    analyticsResult,
+    summaryResult,
+    sessionsResult,
+    streaksResult,
+    quizzesResult,
     projectResult,
-    sessionLogsResult,
-    quizResultsResult,
+    analyticsResult,
+    reportResult,
   ] = await Promise.all([
     supabase
       .from("parent_weekly_summaries")
-      .select("*")
-      .eq("student_id", student.id)
+      .select("week_start_date, week_end_date, lessons_completed, quizzes_completed, average_quiz_score, time_spent_seconds, highlights, concerns, summary")
+      .eq("student_id", selectedStudent.id)
       .order("week_start_date", { ascending: false })
       .limit(1)
       .maybeSingle(),
     supabase
-      .from("analytics_snapshots")
-      .select("*")
-      .eq("student_id", student.id)
-      .order("generated_at", { ascending: false })
-      .limit(10),
+      .from("session_logs")
+      .select("id, duration_seconds, session_started_at")
+      .eq("student_id", selectedStudent.id)
+      .order("session_started_at", { ascending: false })
+      .limit(120),
+    supabase
+      .from("streaks")
+      .select("current_count, longest_count, last_activity_date")
+      .eq("student_id", selectedStudent.id)
+      .limit(5),
+    supabase
+      .from("quiz_results")
+      .select("id, module_key, lesson_key, score, passed, completed_at")
+      .eq("student_id", selectedStudent.id)
+      .order("completed_at", { ascending: false })
+      .limit(120),
     supabase
       .from("student_projects")
-      .select("*, project_tasks(*)")
-      .eq("student_id", student.id)
+      .select("id, title, description, status, updated_at, project_tasks(id, title, status, completed_at, updated_at)")
+      .eq("student_id", selectedStudent.id)
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
     supabase
-      .from("session_logs")
-      .select("*")
-      .eq("student_id", student.id)
-      .order("session_started_at", { ascending: false })
-      .limit(100),
+      .from("analytics_snapshots")
+      .select("snapshot_type, metrics, generated_at")
+      .eq("student_id", selectedStudent.id)
+      .order("generated_at", { ascending: false })
+      .limit(20),
     supabase
-      .from("quiz_results")
-      .select("*")
-      .eq("student_id", student.id)
-      .order("created_at", { ascending: false })
-      .limit(100),
+      .from("parent_monthly_reports")
+      .select("month, report_json, updated_at")
+      .eq("student_id", selectedStudent.id)
+      .order("month", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
-  const summary = weeklySummaryResult.data as WeeklySummary | null;
+  const summary = summaryResult.data as WeeklySummary | null;
+  const sessions = (sessionsResult.data ?? []) as SessionLog[];
+  const streaks = (streaksResult.data ?? []) as Streak[];
+  const quizzes = (quizzesResult.data ?? []) as QuizResult[];
+  const project = projectResult.data as Project | null;
   const analytics = (analyticsResult.data ?? []) as AnalyticsSnapshot[];
-  const project = projectResult.data as StudentProject | null;
-  const sessionLogs = (sessionLogsResult.data ?? []) as SessionLog[];
-  const quizResults = (quizResultsResult.data ?? []) as QuizResult[];
-  const dailyMinutes = buildDailyMinutes(sessionLogs);
-  const weeklyActivity = buildWeeklyActivity(sessionLogs);
-  const currentWeekMinutes = getCurrentWeekMinutes(sessionLogs);
-  const streakDays = getStreakDays(sessionLogs);
-  const skills = buildSkillMastery(quizResults);
-  const strengths = getStrengths(skills);
-  const areasToImprove = getAreasToImprove(skills);
-  const weekNumber = getWeekNumber(summary?.week_start_date ?? sessionLogs[0]?.session_started_at);
-  const lessonsCompleted = summary?.lessons_completed ?? 0;
-  const projectProgress = getProjectProgress(project);
-  const projectUpdates = getProjectUpdates(project);
-  const summaryJson = summary?.summary ?? {};
-  const skillsImproved = toStringArray(summaryJson.skills_improved).concat(summary?.achievements_awarded ?? []);
-  const challenges = summary?.concerns ?? toStringArray(summaryJson.challenges);
-  const recommendations = toStringArray(summaryJson.recommendations);
-  const weeklySummaryText = toStringValue(
-    summaryJson.ai_weekly_summary,
-    summary
-      ? "Your learner is building momentum. Encourage them to explain one thing they learned and one thing they want to try next."
-      : "Weekly AI summaries will appear after enough activity has been recorded.",
-  );
-  const aiCommentary = toStringValue(
-    summaryJson.ai_commentary,
-    "A steady routine matters more than long sessions. Short, focused check-ins can help your learner stay confident.",
-  );
-  const engagementInsights = toStringValue(
-    analytics.find((item) => item.snapshot_type === "engagement")?.metrics.insight,
-    currentWeekMinutes > 0
-      ? "This week has active learning time. A good next step is asking your learner to show the most recent thing they built."
-      : "No minutes are logged for this week yet. A short 15-minute session is a useful way to restart momentum.",
-  );
-  const parentSummary = toStringValue(
-    summaryJson.parent_summary,
-    `${student.display_name} has completed ${lessonsCompleted} lessons and spent ${currentWeekMinutes} minutes learning this week.`,
-  );
-  const lastCommitTime =
-    typeof project?.project_data.last_commit_at === "string" ? project.project_data.last_commit_at : project?.updated_at ?? null;
+  const report = reportResult.data as ParentReport | null;
+  const minutesThisWeek = weeklyMinutes(sessions);
+  const streak = streaks[0]?.current_count ?? 0;
+  const projectStats = projectProgress(project);
+  const skills = skillMastery(quizzes, analytics);
+  const insights = buildInsights(report, summary, analytics);
+  const guidance = buildGuidance({
+    studentName: selectedStudent.display_name,
+    streak,
+    project,
+    projectOpenTasks: projectStats.total - projectStats.completed,
+    minutesThisWeek,
+  });
+
+  const monthlyReportMonth = report?.month ?? currentMonth();
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <ParentHeader
-          studentName={student.display_name}
-          currentWeek={weekNumber}
-          lessonsCompleted={lessonsCompleted}
-          weeklyMinutes={currentWeekMinutes}
-          streakDays={streakDays}
-          summary={parentSummary}
-        />
+    <ParentDashboardLayout>
+      <header className="rounded-lg bg-slate-950 p-6 text-white shadow-sm sm:p-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Parent Dashboard</p>
+            <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Welcome, {getParentName(user)}</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+              A clear weekly view of {selectedStudent.display_name}&apos;s learning rhythm, project momentum, and support needs.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <StudentSelector
+              students={students.map((student): LinkedStudentOption => ({
+                id: student.id,
+                display_name: student.display_name,
+                email: student.email,
+              }))}
+              selectedStudentId={selectedStudent.id}
+            />
+            <Link
+              href={`/parent/reports/${monthlyReportMonth}?studentId=${selectedStudent.id}`}
+              className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+            >
+              Monthly Reports
+            </Link>
+          </div>
+        </div>
+      </header>
 
+      <section className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
         <WeeklySummaryCard
-          weekNumber={weekNumber}
-          lessonsCompleted={lessonsCompleted}
-          minutesSpent={Math.round((summary?.time_spent_seconds ?? currentWeekMinutes * 60) / 60)}
-          skillsImproved={skillsImproved}
-          projectUpdates={projectUpdates}
-          challenges={challenges}
-          aiCommentary={aiCommentary}
+          studentName={selectedStudent.display_name}
+          weekNumber={weekNumberFromDate(summary?.week_start_date)}
+          lessonsCompleted={summary?.lessons_completed ?? 0}
+          minutesSpent={Math.round((summary?.time_spent_seconds ?? minutesThisWeek * 60) / 60)}
+          streakDays={streak}
+          highlights={summary?.highlights ?? []}
+          concerns={summary?.concerns ?? []}
+          consistencyMessage={
+            streak >= 5
+              ? "A strong consistency pattern is forming. Keep encouraging steady, manageable sessions."
+              : minutesThisWeek > 0
+                ? "There is active learning this week. A short follow-up conversation can help lock it in."
+                : "No sessions are logged yet this week. A gentle 10-minute reset is a good next step."
+          }
         />
+        <AiParentInsight studentName={selectedStudent.display_name} insights={insights} reportMonth={monthlyReportMonth} />
+      </section>
 
-        <EngagementChart
-          dailyMinutes={dailyMinutes}
-          weeklyActivity={weeklyActivity}
-          streakDays={streakDays}
-          insights={engagementInsights}
-        />
+      <EngagementAnalytics
+        dailyMinutes={dailyMinutes(sessions)}
+        weeklyActivity={weeklyBars(sessions)}
+        minutes={minutesThisWeek}
+        daysActive={daysActive(sessions)}
+        streak={streak}
+      />
 
-        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <SkillMasteryChart skills={skills} strengths={strengths} areasToImprove={areasToImprove} />
-          <AIInsightsCard recommendations={recommendations} weeklySummary={weeklySummaryText} />
-        </section>
+      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <SkillMasterySnapshot skills={skills} analytics={analytics} />
+        <ProjectProgressOverview project={project} stats={projectStats} />
+      </section>
 
-        <ProjectProgressCard
-          title={project?.title ?? "No active project yet"}
-          progress={projectProgress}
-          milestones={getMilestones(project)}
-          lastCommitTime={lastCommitTime}
-          projectUrl={project?.demo_url ?? project?.repository_url ?? null}
-        />
-      </div>
-    </main>
+      <RecommendedGuidance studentName={selectedStudent.display_name} guidance={guidance} />
+    </ParentDashboardLayout>
   );
 }
 
 function ParentDashboardFallback() {
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="h-44 animate-pulse rounded-lg bg-white shadow-sm" />
+    <ParentDashboardLayout>
+      <div className="h-44 animate-pulse rounded-lg bg-white shadow-sm" />
+      <div className="grid gap-6 xl:grid-cols-2">
         <div className="h-72 animate-pulse rounded-lg bg-white shadow-sm" />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="h-96 animate-pulse rounded-lg bg-white shadow-sm" />
-          <div className="h-96 animate-pulse rounded-lg bg-white shadow-sm" />
-        </div>
+        <div className="h-72 animate-pulse rounded-lg bg-white shadow-sm" />
       </div>
-    </main>
+      <div className="h-96 animate-pulse rounded-lg bg-white shadow-sm" />
+    </ParentDashboardLayout>
   );
 }
 
-export default function ParentDashboardPage() {
+export default async function ParentDashboardPage({ searchParams }: ParentDashboardPageProps) {
+  const params = await searchParams;
+
   return (
     <Suspense fallback={<ParentDashboardFallback />}>
-      <ParentDashboardContent />
+      <ParentDashboardContent selectedStudentId={params.studentId} />
     </Suspense>
   );
 }

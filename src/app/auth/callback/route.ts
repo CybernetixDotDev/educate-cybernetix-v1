@@ -55,10 +55,15 @@ export async function GET(request: NextRequest) {
       { onConflict: "user_id" },
     );
 
-    await supabase.from("user_roles").insert({
-      user_id: data.user.id,
-      role: "student",
-    });
+    await supabase
+      .from("user_roles")
+      .upsert(
+        {
+          user_id: data.user.id,
+          role: "student",
+        },
+        { onConflict: "user_id", ignoreDuplicates: true },
+      );
 
     const { data: roleRow } = await supabase
       .from("user_roles")

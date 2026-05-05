@@ -18,23 +18,43 @@ function isStudentProtectedPath(pathname: string) {
   return STUDENT_PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
+function dashboardPathForRole(role: string) {
+  if (role === "admin") return "/admin";
+  if (role === "parent") return "/parent/dashboard";
+  return "/dashboard";
+}
+
 export async function proxy(request: NextRequest) {
   const { supabase, response } = createClient(request);
 
   const { data } = await supabase.auth.getUser();
+  const pathname = request.nextUrl.pathname;
 
-  if (!data.user) {
+  if (!data.user && !isStudentProtectedPath(pathname)) {
     return response();
   }
 
-  const pathname = request.nextUrl.pathname;
+  if (!data.user && isStudentProtectedPath(pathname)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/auth";
+    redirectUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
   const [{ data: roleRow }, { data: student }] = await Promise.all([
-    supabase.from("user_roles").select("role").eq("user_id", data.user.id).maybeSingle(),
-    supabase.from("students").select("onboarding_complete").eq("user_id", data.user.id).maybeSingle(),
+    supabase.from("user_roles").select("role").eq("user_id", data.user!.id).maybeSingle(),
+    supabase.from("students").select("onboarding_complete").eq("user_id", data.user!.id).maybeSingle(),
   ]);
 
   const role = roleRow?.role ?? "student";
   const onboardingComplete = student?.onboarding_complete === true;
+
+  if (role !== "student" && isStudentProtectedPath(pathname)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = dashboardPathForRole(role);
+    redirectUrl.search = "";
+    return NextResponse.redirect(redirectUrl);
+  }
 
   if (role === "student" && !onboardingComplete && isStudentProtectedPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
@@ -46,6 +66,13 @@ export async function proxy(request: NextRequest) {
   if (role === "student" && onboardingComplete && pathname === "/onboarding") {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
+    redirectUrl.search = "";
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (role !== "student" && pathname === "/onboarding") {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = dashboardPathForRole(role);
     redirectUrl.search = "";
     return NextResponse.redirect(redirectUrl);
   }

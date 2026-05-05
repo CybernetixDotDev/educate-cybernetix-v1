@@ -1,6 +1,8 @@
 "use server";
 
-import { compileMentorPrompt } from "@/lib/mentor/promptCompiler";
+import { compilePrompt } from "@/lib/ai/compilePrompt";
+import { getModel } from "@/lib/ai/getModel";
+import { callJsonLLM } from "@/lib/ai/provider";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 
@@ -141,7 +143,7 @@ function buildPrompt(input: CoachingInput, context: Awaited<ReturnType<typeof fe
     growth_insights: { engagement: "string", mastery: "string", project_progress: "string" },
   };
 
-  return compileMentorPrompt({
+  return compilePrompt({
     student_id: input.student_id,
     mode: "review",
     module_id: `week${input.week_number}`,
@@ -169,38 +171,12 @@ function buildPrompt(input: CoachingInput, context: Awaited<ReturnType<typeof fe
   });
 }
 
-async function callLlm(prompt: string, aiConfig: Record<string, unknown>) {
-  const apiKey = process.env.AI_PROVIDER_API_KEY ?? process.env.OPENAI_API_KEY;
-  const endpoint = process.env.AI_PROVIDER_URL ?? "https://api.openai.com/v1/chat/completions";
-  const model = typeof aiConfig.model === "string" ? aiConfig.model : "gpt-4.1-mini";
-
-  if (!apiKey) throw new Error("AI provider API key is not configured");
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      temperature: 0.4,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: "You generate student coaching plan JSON. Return JSON only." },
-        { role: "user", content: prompt },
-      ],
-    }),
-  });
-
-  if (!response.ok) throw new Error(`AI provider failed with ${response.status}: ${(await response.text()).slice(0, 500)}`);
-  const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  const content = payload.choices?.[0]?.message?.content;
-  if (!content) throw new Error("AI provider returned an empty coaching plan");
-  return JSON.parse(content) as unknown;
-}
 
 export async function generateCoachingPlan(input: CoachingInput): Promise<CoachingResult> {
   try {
     const context = await fetchCoachingContext(input);
-    const raw = await callLlm(buildPrompt(input, context, "full"), context.aiConfig);
+    const model = await getModel("json", context.aiConfig);
+    const raw = await callJsonLLM(model, buildPrompt(input, context, "full"));
     return { ok: true, plan: normalizePlan(raw, input), error: null };
   } catch (error) {
     return { ok: false, plan: null, error: error instanceof Error ? error.message : "Unable to generate coaching plan" };
@@ -209,6 +185,7 @@ export async function generateCoachingPlan(input: CoachingInput): Promise<Coachi
 
 export async function generateCoachingSection(input: CoachingInput, section: "skills" | "micro_tasks" | "motivation") {
   const context = await fetchCoachingContext(input);
-  const raw = await callLlm(buildPrompt(input, context, section), context.aiConfig);
+  const model = await getModel("json", context.aiConfig);
+    const raw = await callJsonLLM(model, buildPrompt(input, context, section));
   return normalizePlan(raw, input);
 }

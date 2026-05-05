@@ -1,6 +1,8 @@
 "use server";
 
-import { compileMentorPrompt } from "@/lib/mentor/promptCompiler";
+import { compilePrompt } from "@/lib/ai/compilePrompt";
+import { getModel } from "@/lib/ai/getModel";
+import { callJsonLLM } from "@/lib/ai/provider";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 
@@ -201,7 +203,7 @@ function buildPrompt(input: ParentReportInput, context: Awaited<ReturnType<typeo
     next_steps: ["string"],
   };
 
-  return compileMentorPrompt({
+  return compilePrompt({
     student_id: input.student_id,
     mode: "review",
     module_id: "parent-monthly-report",
@@ -230,33 +232,6 @@ function buildPrompt(input: ParentReportInput, context: Awaited<ReturnType<typeo
   });
 }
 
-async function callLlm(prompt: string, aiConfig: Record<string, unknown>) {
-  const apiKey = process.env.AI_PROVIDER_API_KEY ?? process.env.OPENAI_API_KEY;
-  const endpoint = process.env.AI_PROVIDER_URL ?? "https://api.openai.com/v1/chat/completions";
-  const model = typeof aiConfig.model === "string" ? aiConfig.model : "gpt-4.1-mini";
-
-  if (!apiKey) throw new Error("AI provider API key is not configured");
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      temperature: 0.35,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: "You generate monthly parent report JSON. Return JSON only." },
-        { role: "user", content: prompt },
-      ],
-    }),
-  });
-
-  if (!response.ok) throw new Error(`AI provider failed with ${response.status}: ${(await response.text()).slice(0, 500)}`);
-  const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  const content = payload.choices?.[0]?.message?.content;
-  if (!content) throw new Error("AI provider returned an empty parent report");
-  return JSON.parse(content) as unknown;
-}
 
 export async function generateParentReport(input: ParentReportInput): Promise<ParentReportResult> {
   try {
@@ -264,7 +239,8 @@ export async function generateParentReport(input: ParentReportInput): Promise<Pa
     if (!/^\d{4}-\d{2}$/.test(input.month)) throw new Error("month must use YYYY-MM format");
 
     const context = await fetchReportContext(input);
-    const raw = await callLlm(buildPrompt(input, context, "full"), context.aiConfig);
+    const model = await getModel("json", context.aiConfig);
+    const raw = await callJsonLLM(model, buildPrompt(input, context, "full"));
     return { ok: true, report: normalizeReport(raw, input), error: null };
   } catch (error) {
     return { ok: false, report: null, error: error instanceof Error ? error.message : "Unable to generate parent report" };
@@ -273,6 +249,7 @@ export async function generateParentReport(input: ParentReportInput): Promise<Pa
 
 export async function generateParentReportSection(input: ParentReportInput, section: Exclude<ParentReportSection, "full">): Promise<ParentReportJSON> {
   const context = await fetchReportContext(input);
-  const raw = await callLlm(buildPrompt(input, context, section), context.aiConfig);
+  const model = await getModel("json", context.aiConfig);
+    const raw = await callJsonLLM(model, buildPrompt(input, context, section));
   return normalizeReport(raw, input);
 }

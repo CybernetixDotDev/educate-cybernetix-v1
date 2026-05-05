@@ -3,6 +3,7 @@ import Link from "next/link";
 const NAV_ITEMS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/modules", label: "Modules" },
+  { href: "/admin/curriculum", label: "Curriculum" },
   { href: "/admin/projects", label: "Projects" },
   { href: "/admin/ai-config", label: "AI Config" },
   { href: "/admin/ai-context", label: "AI Context" },
