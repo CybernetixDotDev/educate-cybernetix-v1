@@ -48,5 +48,17 @@ export async function POST() {
     .eq("user_id", data.user.id)
     .maybeSingle();
 
-  return Response.json({ ok: true, role: roleRow?.role ?? "student", dashboard_path: dashboardPathForRole(roleRow?.role) });
+  const { data: studentRow } = await supabase
+    .from("students")
+    .select("onboarding_complete")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+
+  const role = roleRow?.role ?? "student";
+
+  return Response.json({
+    ok: true,
+    role,
+    dashboard_path: role === "student" && !studentRow?.onboarding_complete ? "/onboarding" : dashboardPathForRole(role),
+  });
 }

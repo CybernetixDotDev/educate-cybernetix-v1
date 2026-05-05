@@ -66,8 +66,17 @@ export async function GET(request: NextRequest) {
       .eq("user_id", data.user.id)
       .maybeSingle();
 
+    const { data: studentRow } = await supabase
+      .from("students")
+      .select("onboarding_complete")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+
     if (next === "/dashboard") {
-      redirectUrl.pathname = dashboardPathForRole(roleRow?.role);
+      redirectUrl.pathname =
+        (roleRow?.role ?? "student") === "student" && !studentRow?.onboarding_complete
+          ? "/onboarding"
+          : dashboardPathForRole(roleRow?.role);
       redirectUrl.search = "";
     }
   }
