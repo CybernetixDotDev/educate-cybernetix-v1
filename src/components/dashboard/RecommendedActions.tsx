@@ -30,12 +30,12 @@ export function RecommendedActions({
       ? {
           title: "Complete 2 project tasks",
           body: `${openTasks.length} task${openTasks.length === 1 ? "" : "s"} still open on your current project.`,
-          href: "/project-mentor",
+          href: "/mentor?intent=project",
         }
       : {
-          title: "Generate project tasks",
-          body: "Use the Project Mentor to create the next build plan.",
-          href: "/project-mentor",
+          title: "Plan your project",
+          body: "Ask Cyber Mentor to create a clear next build plan.",
+          href: "/mentor?intent=project",
         },
     lastQuiz && Number(lastQuiz.score) < 80
       ? {
@@ -44,7 +44,7 @@ export function RecommendedActions({
           href: "/mentor",
         }
       : {
-          title: hasMentor ? "Ask a builder question" : "Ask the Mentor a question",
+          title: hasMentor ? "Ask one stuck question" : "Ask Cyber Mentor",
           body: "Bring one stuck point, design decision, or debugging issue.",
           href: "/mentor",
         },
@@ -65,4 +65,3 @@ export function RecommendedActions({
     </section>
   );
 }
-

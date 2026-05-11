@@ -148,7 +148,7 @@ export function ProjectMentorClient() {
             </p>
           </div>
           <Link
-            href={projectId ? `/mentor?project_id=${projectId}&mode=builder` : "/mentor"}
+            href={projectId ? `/mentor?project_id=${projectId}&intent=project` : "/mentor?intent=project"}
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 shadow-sm"
           >
             Open Full Mentor

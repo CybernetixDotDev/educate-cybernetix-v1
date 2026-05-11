@@ -17,8 +17,8 @@ export function ProjectSnapshot({ project }: { project: DashboardProject | null 
             {project?.description ?? "Use the Project Mentor to generate tasks and start building your MVP."}
           </p>
         </div>
-        <Link href="/project-mentor" className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
-          Open Project Mentor
+        <Link href="/mentor?intent=project" className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
+          Ask Cyber Mentor
         </Link>
       </div>
       <div className="mt-6">
@@ -33,9 +33,8 @@ export function ProjectSnapshot({ project }: { project: DashboardProject | null 
             </span>
           </div>
         ))}
-        {tasks.length === 0 && <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No project tasks yet. Generate a task list to unlock your build plan.</p>}
+        {tasks.length === 0 && <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No project tasks yet. Ask Cyber Mentor to help turn your idea into a build plan.</p>}
       </div>
     </section>
   );
 }
-

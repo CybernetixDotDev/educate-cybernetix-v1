@@ -16,6 +16,7 @@ const VALID_MODES = new Set<MentorMode>([
 type MentorBody = {
   student_id?: unknown;
   mode?: unknown;
+  intent_hint?: unknown;
   module_id?: unknown;
   lesson_id?: unknown;
   project_id?: unknown;
@@ -55,6 +56,7 @@ function validateBody(body: MentorBody) {
   const project_id = cleanOptionalString(body.project_id);
   const student_message = cleanOptionalString(body.student_message);
   const code_snippet = cleanOptionalString(body.code_snippet);
+  const intent_hint = cleanOptionalString(body.intent_hint);
 
   const errors: string[] = [];
 
@@ -91,9 +93,44 @@ function validateBody(body: MentorBody) {
       project_id,
       student_message: student_message ?? "",
       code_snippet,
+      intent_hint,
     },
     errors,
   };
+}
+
+function inferMode(body: ReturnType<typeof validateBody>["data"]): MentorMode {
+  if (body.mode !== "general") return body.mode;
+
+  if (body.intent_hint === "quiz") return "quiz";
+  if (body.intent_hint === "project" || body.intent_hint === "presentation") return "builder";
+  if (body.intent_hint === "debug") return "debug";
+  if (body.intent_hint === "review") return "review";
+  if (body.intent_hint === "lesson") return "teacher";
+
+  const combined = `${body.student_message}\n${body.code_snippet ?? ""}`;
+  const message = body.student_message.toLowerCase();
+  const hasCode = Boolean(body.code_snippet?.trim());
+
+  if (hasCode && /(error|exception|stack|trace|failed|bug|broken|not working|undefined|null|cannot|hydration|rls|policy|500|404)/i.test(combined)) {
+    return "debug";
+  }
+
+  if (hasCode && /(review|improve|quality|clean|refactor|accessibility|security|performance|best practice)/i.test(message)) {
+    return "review";
+  }
+
+  if (/(quiz|test me|practice question|checkpoint|answer|multiple choice|true or false)/i.test(message)) {
+    return "quiz";
+  }
+
+  if (/(project|task|feature|mvp|architecture|build|repository|github|deploy|demo|presentation|slide|script|q&a)/i.test(message)) {
+    return "builder";
+  }
+
+  if (body.project_id) return "builder";
+  if (body.lesson_id || body.module_id !== "general") return "teacher";
+  return "teacher";
 }
 
 async function fetchProgress(supabase: ReturnType<typeof createClient>, studentId: string, projectId: string | null) {
@@ -386,6 +423,7 @@ export async function POST(request: Request) {
   }
 
   const { data: body, errors } = validateBody(rawBody);
+  body.mode = inferMode(body);
 
   if (errors.length > 0) {
     return jsonError("Invalid mentor request", 400, { errors });
@@ -456,6 +494,8 @@ export async function POST(request: Request) {
       ...llm.metadata,
       provider: llm.provider_metadata,
       module_context_found: Boolean(moduleContext),
+      routed_mode: body.mode,
+      intent_hint: body.intent_hint,
     };
 
     await logInteraction(supabase, mentorRequest, prompt, llm.message, metadata);

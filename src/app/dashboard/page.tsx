@@ -1,9 +1,7 @@
-import { AIMentorInsight } from "@/components/dashboard/AIMentorInsight";
 import { EngagementSummary } from "@/components/dashboard/EngagementSummary";
 import { NextLessonCard } from "@/components/dashboard/NextLessonCard";
 import { ProjectSnapshot } from "@/components/dashboard/ProjectSnapshot";
 import { QuickToolsGrid } from "@/components/dashboard/QuickToolsGrid";
-import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { RecommendedActions } from "@/components/dashboard/RecommendedActions";
 import { StudentTopNav } from "@/components/layout/StudentTopNav";
 import { dashboardPathForRole, getCurrentUserRole } from "@/lib/auth/roles";
@@ -249,25 +247,15 @@ async function DashboardCommandCenter() {
             </div>
           </header>
 
-          <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+          <section className="grid gap-6 xl:grid-cols-2">
             <NextLessonCard lessonProgress={data.lessonProgress} />
-            <EngagementSummary sessionLogs={data.sessionLogs} streaks={data.streaks} />
+            <ProjectSnapshot project={data.project} />
           </section>
 
           <QuickToolsGrid />
 
-          <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-            <ProjectSnapshot project={data.project} />
-            <AIMentorInsight interactions={data.mentorInteractions} />
-          </section>
-
-          <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-            <RecentActivity
-              lessonProgress={data.lessonProgress}
-              quizResults={data.quizResults}
-              project={data.project}
-              mentorInteractions={data.mentorInteractions}
-            />
+          <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+            <EngagementSummary sessionLogs={data.sessionLogs} streaks={data.streaks} />
             <RecommendedActions
               lessonProgress={data.lessonProgress}
               quizResults={data.quizResults}

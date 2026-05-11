@@ -8,7 +8,7 @@ function extractActions(interaction: DashboardMentorInteraction | undefined) {
   const response = interaction?.response?.trim();
   if (response) return [response.slice(0, 180)];
 
-  return ["Ask the mentor what to focus on before your next build session.", "Bring one code question or project decision to the chat."];
+  return ["Ask Cyber Mentor what to focus on before your next build session.", "Bring one lesson, code, or project question to the same chat."];
 }
 
 export function AIMentorInsight({ interactions }: { interactions: DashboardMentorInteraction[] }) {
@@ -19,11 +19,11 @@ export function AIMentorInsight({ interactions }: { interactions: DashboardMento
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-violet-600">AI Mentor Insight</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-violet-600">Cyber Mentor Insight</p>
           <h2 className="mt-1 text-xl font-black text-slate-950">Your Mentor Suggests...</h2>
         </div>
         <Link href="/mentor" className="rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700">
-          Open Mentor
+          Ask Mentor
         </Link>
       </div>
       <div className="mt-5 space-y-3">
@@ -34,9 +34,8 @@ export function AIMentorInsight({ interactions }: { interactions: DashboardMento
         ))}
       </div>
       <p className="mt-4 text-xs font-semibold text-slate-500">
-        {latest ? `Last mentor activity: ${new Date(latest.created_at).toLocaleDateString()}` : "No mentor sessions yet"}
+        {latest ? `Last Cyber Mentor activity: ${new Date(latest.created_at).toLocaleDateString()}` : "No Cyber Mentor sessions yet"}
       </p>
     </section>
   );
 }
-

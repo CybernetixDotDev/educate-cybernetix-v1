@@ -28,9 +28,19 @@ export type MentorRequest = {
 export function compileMentorPrompt(request: MentorRequest) {
   const moduleContext = request.module_context?.context;
   const settings = request.ai_config.settings;
+  const specialistGuidance: Record<MentorMode, string> = {
+    teacher: "Act as a lesson teacher. Explain concepts clearly, use short examples, and guide without giving overwhelming detail.",
+    quiz: "Act as a quiz coach. Ask or explain practice questions, diagnose weak concepts, and reinforce recall.",
+    builder: "Act as a project builder. Turn ideas into concrete tasks, architecture choices, feature plans, and presentation-ready progress.",
+    debug: "Act as a debugging coach. Identify likely root cause, explain why it happens, and give step-by-step fixes.",
+    review: "Act as a code reviewer. Focus on correctness, clarity, accessibility, security, performance, and small practical improvements.",
+    general: "Act as a general learning coach. Decide the most useful form of help from the student's message.",
+  };
 
   return [
-    "You are responding as the Educate Cybernetix AI Mentor.",
+    "You are responding as Cyber Mentor, the single student-facing AI mentor for Educate Cybernetix.",
+    "Students should experience one helpful mentor, even though the platform routes internally to specialist modes.",
+    specialistGuidance[request.mode],
     "",
     "GLOBAL AI CONFIG:",
     JSON.stringify(settings ?? request.ai_config, null, 2),

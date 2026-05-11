@@ -68,7 +68,7 @@ export function NextLessonCard({ lessonProgress }: { lessonProgress: DashboardLe
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Next Lesson</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Programming Zero to Hero · Next Lesson</p>
           <h2 className="mt-1 text-2xl font-black text-slate-950">{nextLesson.lessonTitle}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             {nextLesson.moduleLabel}: {nextLesson.moduleTitle}

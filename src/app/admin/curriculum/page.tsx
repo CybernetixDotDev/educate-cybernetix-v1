@@ -1,3 +1,4 @@
+import { CourseList, type CurriculumCourse } from "@/components/curriculum/CourseList";
 import { JsonUploadPanel } from "@/components/curriculum/JsonUploadPanel";
 import { LessonList, type CurriculumLesson } from "@/components/curriculum/LessonList";
 import { ModuleList, type CurriculumModule } from "@/components/curriculum/ModuleList";
@@ -12,6 +13,7 @@ import { Suspense } from "react";
 
 type CurriculumPageProps = {
   searchParams: Promise<{
+    courseId?: string;
     moduleId?: string;
     lessonId?: string;
   }>;
@@ -23,22 +25,26 @@ type QuizRow = {
   current_version_id: string | null;
 };
 
-async function CurriculumContent({ moduleId, lessonId }: { moduleId?: string; lessonId?: string }) {
+async function CurriculumContent({ courseId, moduleId, lessonId }: { courseId?: string; moduleId?: string; lessonId?: string }) {
   const role = await requireRole(["admin"]);
   if (!role) redirect("/auth?next=/admin/curriculum");
 
   const supabase = createClient(await cookies());
-  const [{ data: moduleRows, error: moduleError }, { data: lessonRows, error: lessonError }, { data: quizRows }] =
+  const [{ data: courseRows, error: courseError }, { data: moduleRows, error: moduleError }, { data: lessonRows, error: lessonError }, { data: quizRows }] =
     await Promise.all([
-      supabase.from("modules").select("id, title, description, order_index").order("order_index", { ascending: true }),
+      supabase.from("courses").select("id, course_key, title, description, category, duration_weeks, is_published, order_index").order("order_index", { ascending: true }),
+      supabase.from("modules").select("id, course_id, module_key, title, description, order_index, week_number, is_published").order("order_index", { ascending: true }),
       supabase.from("lessons").select("id, module_id, title, order_index, current_version_id").order("order_index", { ascending: true }),
       supabase.from("quizzes").select("id, lesson_id, current_version_id"),
     ]);
 
+  if (courseError) throw new Error(courseError.message);
   if (moduleError) throw new Error(moduleError.message);
   if (lessonError) throw new Error(lessonError.message);
 
-  const modules = (moduleRows ?? []) as CurriculumModule[];
+  const courses = (courseRows ?? []) as CurriculumCourse[];
+  const selectedCourseId = courseId ?? courses[0]?.id ?? null;
+  const modules = ((moduleRows ?? []) as CurriculumModule[]).filter((module) => !selectedCourseId || module.course_id === selectedCourseId);
   const quizzes = (quizRows ?? []) as QuizRow[];
   const selectedModuleId = moduleId ?? modules[0]?.id ?? null;
   const moduleLessons = ((lessonRows ?? []) as CurriculumLesson[])
@@ -64,13 +70,17 @@ async function CurriculumContent({ moduleId, lessonId }: { moduleId?: string; le
           </p>
         </header>
 
+        <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+          <CourseList courses={courses} selectedCourseId={selectedCourseId} />
+          <ModuleList modules={modules} selectedModuleId={selectedModuleId} selectedCourseId={selectedCourseId} />
+        </section>
+
         <section className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-          <ModuleList modules={modules} selectedModuleId={selectedModuleId} />
           <LessonList moduleId={selectedModuleId} lessons={moduleLessons} selectedLessonId={selectedLessonId} />
+          <JsonUploadPanel lessonId={selectedLessonId} />
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <JsonUploadPanel lessonId={selectedLessonId} />
           <div className="space-y-6">
             <VersionHistory
               title={selectedLesson ? `${selectedLesson.title} lesson versions` : "Lesson versions"}
@@ -112,8 +122,7 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
 
   return (
     <Suspense fallback={<Fallback />}>
-      <CurriculumContent moduleId={params.moduleId} lessonId={params.lessonId} />
+      <CurriculumContent courseId={params.courseId} moduleId={params.moduleId} lessonId={params.lessonId} />
     </Suspense>
   );
 }
-

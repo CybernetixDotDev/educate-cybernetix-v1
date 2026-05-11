@@ -1,5 +1,6 @@
 "use client";
 
+import { SignOutButton } from "@/components/auth/SignOutButton";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -34,38 +35,20 @@ export const STUDENT_NAV_ITEMS: StudentNavItem[] = [
   },
   {
     href: "/mentor",
-    label: "AI Mentor",
-    description: "Teacher, quizmaster, builder",
+    label: "Cyber Mentor",
+    description: "One place for help when stuck",
     icon: <Icon><path d="M12 3v3" /><path d="M5 8h14v10a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V8Z" /><path d="M9 13h.01" /><path d="M15 13h.01" /></Icon>,
   },
   {
     href: "/project-mentor",
-    label: "Project Mentor",
-    description: "Tasks and build planning",
+    label: "Build Project",
+    description: "Your MVP tasks and progress",
     icon: <Icon><path d="M12 3 3 8l9 5 9-5-9-5Z" /><path d="m3 13 9 5 9-5" /></Icon>,
   },
   {
-    href: "/debugger",
-    label: "Debugger",
-    description: "Fix errors step by step",
-    icon: <Icon><path d="M8 8V5a4 4 0 0 1 8 0v3" /><path d="M6 8h12v8a6 6 0 0 1-12 0V8Z" /><path d="M4 13H2" /><path d="M22 13h-2" /></Icon>,
-  },
-  {
-    href: "/code-review",
-    label: "Code Review",
-    description: "Improve quality and clarity",
-    icon: <Icon><path d="m9 18-6-6 6-6" /><path d="m15 6 6 6-6 6" /></Icon>,
-  },
-  {
-    href: "/presentation-coach",
-    label: "Presentation Coach",
-    description: "Slides, script, Q&A prep",
-    icon: <Icon><path d="M4 5h16v10H4V5Z" /><path d="M12 15v5" /><path d="M8 20h8" /></Icon>,
-  },
-  {
     href: "/certificates",
-    label: "Certificates",
-    description: "Completion proof and skills",
+    label: "Progress",
+    description: "Certificates and skill proof",
     icon: <Icon><path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" /><path d="M5 6H3v2a4 4 0 0 0 4 4" /><path d="M19 6h2v2a4 4 0 0 1-4 4" /></Icon>,
   },
   {
@@ -114,7 +97,9 @@ export function StudentSidebar({ open = true, onNavigate }: { open?: boolean; on
           );
         })}
       </nav>
+      <div className="mt-5 border-t border-slate-200 pt-4">
+        <SignOutButton className="w-full rounded-2xl border border-slate-200 bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800 disabled:opacity-60" />
+      </div>
     </aside>
   );
 }
-

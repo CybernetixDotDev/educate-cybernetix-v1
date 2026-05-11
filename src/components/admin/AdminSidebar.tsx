@@ -1,3 +1,4 @@
+import { SignOutButton } from "@/components/auth/SignOutButton";
 import Link from "next/link";
 
 const NAV_ITEMS = [
@@ -47,6 +48,12 @@ export function AdminSidebar() {
       <Link href="/dashboard" className="mt-8 hidden text-sm font-semibold text-slate-500 hover:text-cyan-700 lg:block">
         Back to Student App
       </Link>
+      <div className="mt-4 hidden border-t border-slate-200 pt-4 lg:block">
+        <SignOutButton className="w-full rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" />
+      </div>
+      <div className="mt-4 lg:hidden">
+        <SignOutButton className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" />
+      </div>
     </aside>
   );
 }

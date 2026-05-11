@@ -1,3 +1,4 @@
+import { SignOutButton } from "@/components/auth/SignOutButton";
 import { dashboardPathForRole, getCurrentUserRole } from "@/lib/auth/roles";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
@@ -25,9 +26,7 @@ export default async function LandingPage() {
                 <Link href={dashboardPath} className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-950">
                   Dashboard
                 </Link>
-                <Link href="/auth/signout" className="hidden rounded-xl border border-white/20 px-4 py-2 text-sm font-bold text-white sm:inline-flex">
-                  Sign out
-                </Link>
+                <SignOutButton className="hidden rounded-xl border border-white/20 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10 disabled:opacity-60 sm:inline-flex" />
               </>
             ) : (
               <>

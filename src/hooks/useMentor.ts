@@ -19,6 +19,7 @@ export type MentorMessage = {
 export type MentorSendInput = {
   student_id: string;
   mode?: MentorMode;
+  intent_hint?: "lesson" | "quiz" | "project" | "debug" | "review" | "presentation" | "coach" | null;
   module_id?: string | null;
   lesson_id?: string | null;
   project_id?: string | null;
@@ -51,6 +52,51 @@ function createMessage(role: MentorRole, content: string, extras: Partial<Mentor
     created_at: new Date().toISOString(),
     ...extras,
   };
+}
+
+function inferMentorMode(input: MentorSendInput, currentMode: MentorMode): MentorMode {
+  if (input.mode && input.mode !== "general") return input.mode;
+
+  const hint = input.intent_hint;
+  if (hint === "quiz") return "quiz";
+  if (hint === "project" || hint === "presentation") return "builder";
+  if (hint === "debug") return "debug";
+  if (hint === "review") return "review";
+  if (hint === "lesson") return "teacher";
+
+  const message = input.student_message.toLowerCase();
+  const combined = `${input.student_message}\n${input.code_snippet ?? ""}`;
+  const hasCode = Boolean(input.code_snippet?.trim());
+
+  if (hasCode && /(error|exception|stack|trace|failed|bug|broken|not working|undefined|null|cannot|hydration|rls|policy|500|404)/i.test(combined)) {
+    return "debug";
+  }
+
+  if (hasCode && /(review|improve|quality|clean|refactor|accessibility|security|performance|best practice)/i.test(message)) {
+    return "review";
+  }
+
+  if (/(quiz|test me|practice question|checkpoint|answer|multiple choice|true or false)/i.test(message)) {
+    return "quiz";
+  }
+
+  if (/(project|task|feature|mvp|architecture|build|repository|github|deploy|demo|presentation|slide|script|q&a)/i.test(message)) {
+    return "builder";
+  }
+
+  if (input.project_id) return "builder";
+  if (input.lesson_id || input.module_id) return "teacher";
+  return currentMode === "general" ? "teacher" : currentMode;
+}
+
+function describeSpecialist(mode: MentorMode, intentHint: MentorSendInput["intent_hint"]) {
+  if (intentHint === "presentation") return "presentation coach";
+  if (mode === "debug") return "debugging coach";
+  if (mode === "review") return "code reviewer";
+  if (mode === "builder") return "project builder";
+  if (mode === "quiz" || mode === "quizmaster") return "quiz coach";
+  if (mode === "teacher") return "teacher";
+  return "general coach";
 }
 
 async function readMentorResponse(response: Response): Promise<MentorResponse> {
@@ -94,17 +140,17 @@ export function useMentor(): UseMentorResult {
   const [messages, setMessages] = useState<MentorMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<MentorMode>("teacher");
+  const [mode, setMode] = useState<MentorMode>("general");
 
   const sendMessage = useCallback(async (input: MentorSendInput) => {
     const trimmedMessage = input.student_message.trim();
     const trimmedCode = input.code_snippet?.trim() ?? null;
-    const requestMode = input.mode ?? mode;
+    const requestMode = inferMentorMode(input, input.mode ?? mode);
     const apiMode = requestMode === "quizmaster" ? "quiz" : requestMode;
     const moduleId = input.module_id ?? "general";
 
     if (!input.student_id || !requestMode || (!trimmedMessage && !trimmedCode)) {
-      setError("student_id, mode, and a message or code snippet are required");
+      setError("student_id and a message or code snippet are required");
       return null;
     }
 
@@ -114,6 +160,8 @@ export function useMentor(): UseMentorResult {
         module_id: moduleId,
         lesson_id: input.lesson_id ?? null,
         project_id: input.project_id ?? null,
+        intent_hint: input.intent_hint ?? null,
+        routed_to: describeSpecialist(apiMode, input.intent_hint),
         has_code_snippet: Boolean(trimmedCode),
       },
     });
@@ -137,9 +185,14 @@ export function useMentor(): UseMentorResult {
         }),
       });
       const mentorResponse = await readMentorResponse(response);
+      setMode(mentorResponse.mode);
       const mentorMessage = createMessage("mentor", mentorResponse.message, {
         mode: mentorResponse.mode,
-        metadata: mentorResponse.metadata,
+        metadata: {
+          ...mentorResponse.metadata,
+          intent_hint: input.intent_hint ?? null,
+          routed_to: describeSpecialist(mentorResponse.mode, input.intent_hint),
+        },
         next_actions: mentorResponse.next_actions,
       });
 

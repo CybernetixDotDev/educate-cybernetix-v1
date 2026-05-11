@@ -2,7 +2,6 @@
 
 import { ChatInput } from "@/components/mentor/ChatInput";
 import { ChatMessage } from "@/components/mentor/ChatMessage";
-import { ModeSelector } from "@/components/mentor/ModeSelector";
 import { TypingIndicator } from "@/components/mentor/TypingIndicator";
 import { useMentor } from "@/hooks/useMentor";
 import { useStudent } from "@/hooks/useStudent";
@@ -15,20 +14,22 @@ function MentorChatPageContent() {
   const moduleId = searchParams.get("module_id") ?? searchParams.get("moduleId") ?? "general";
   const lessonId = searchParams.get("lesson_id") ?? searchParams.get("lessonId");
   const projectId = searchParams.get("project_id") ?? searchParams.get("projectId");
+  const intent = searchParams.get("intent") as "lesson" | "quiz" | "project" | "debug" | "review" | "presentation" | "coach" | null;
   const { student, loading: studentLoading, error: studentError } = useStudent();
-  const { messages, sendMessage, loading, error, mode, setMode } = useMentor();
+  const { messages, sendMessage, loading, error, mode } = useMentor();
   const scrollAnchorRef = useRef<HTMLDivElement | null>(null);
-  const welcomeText = useMemo(() => {
-    if (mode === "quizmaster") {
-      return "Quizmaster mode is ready. Ask for practice questions, hints, or a quick concept check.";
-    }
-
-    if (mode === "builder") {
-      return "Builder mode is ready. Bring a project idea, bug, or next task and we will turn it into progress.";
-    }
-
-    return "Teacher mode is ready. Ask for explanations, examples, or a clearer mental model.";
-  }, [mode]);
+  const promptSuggestions = useMemo(() => {
+    if (intent === "debug") return ["My code is broken. Help me find the cause.", "This error keeps appearing. What should I check first?", "Explain this stack trace in simple steps."];
+    if (intent === "review") return ["Review this code for clarity and quality.", "How can I make this component cleaner?", "Check my code for accessibility or security issues."];
+    if (intent === "project") return ["What project task should I do next?", "Help me plan the next feature.", "Turn my project idea into a simple MVP plan."];
+    if (intent === "presentation") return ["Help me explain my project clearly.", "Create a demo walkthrough for my project.", "What questions might I get after presenting?"];
+    if (intent === "quiz") return ["Quiz me on this module.", "Explain the question I got wrong.", "Give me practice questions before the checkpoint."];
+    return [
+      "Explain this lesson like I am new to it.",
+      "My code is not working. Help me debug it.",
+      "Help me choose the next project task.",
+    ];
+  }, [intent]);
 
   useEffect(() => {
     scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -45,6 +46,7 @@ function MentorChatPageContent() {
       module_id: moduleId,
       lesson_id: lessonId,
       project_id: projectId,
+      intent_hint: intent,
       student_message: message,
     });
   }
@@ -59,7 +61,7 @@ function MentorChatPageContent() {
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-slate-950">Educate Cybernetix Mentor</h1>
+              <h1 className="text-xl font-bold text-slate-950">Cyber Mentor</h1>
                 <Link href="/dashboard" className="hidden text-sm font-semibold text-cyan-700 hover:text-cyan-900 sm:inline">
                   Dashboard
                 </Link>
@@ -69,17 +71,19 @@ function MentorChatPageContent() {
               </p>
             </div>
           </div>
-          <ModeSelector mode={mode} onChange={setMode} />
+          <div className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600">
+            Auto-routes to: <span className="text-slate-950">{mode}</span>
+          </div>
         </div>
       </header>
 
       <section className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
         <div className="mx-auto flex min-h-full max-w-6xl flex-col gap-4">
           <div className="rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur">
-            <p className="text-sm font-semibold uppercase tracking-wide text-violet-600">{mode}</p>
-            <h2 className="mt-1 text-2xl font-bold text-slate-950">{welcomeText}</h2>
+            <p className="text-sm font-semibold uppercase tracking-wide text-violet-600">One mentor, the right help</p>
+            <h2 className="mt-1 text-2xl font-bold text-slate-950">Tell Cyber Mentor what you are working on or where you are stuck.</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Share what you are building, what you tried, and the exact point where you got stuck. Short questions are fine.
+              It will route the request internally to teaching, quiz coaching, project planning, debugging, code review, or presentation help.
             </p>
           </div>
 
@@ -91,11 +95,7 @@ function MentorChatPageContent() {
           <div className="flex flex-1 flex-col gap-4">
             {messages.length === 0 ? (
               <div className="grid gap-3 sm:grid-cols-3">
-                {[
-                  "Explain this lesson like I am new to it.",
-                  "Quiz me on the key ideas from this module.",
-                  "Help me choose the next project task.",
-                ].map((prompt) => (
+                {promptSuggestions.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
@@ -127,7 +127,7 @@ function MentorChatPageContent() {
         <div className="mx-auto max-w-6xl">
           <ChatInput
             disabled={!student || loading}
-            placeholder={student ? `Ask in ${mode} mode...` : "Sign in to ask your mentor"}
+            placeholder={student ? "Ask Cyber Mentor anything about the lesson, project, code, quiz, or presentation..." : "Sign in to ask your mentor"}
             onSend={handleSend}
           />
         </div>

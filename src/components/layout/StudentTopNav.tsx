@@ -1,8 +1,7 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { SignOutButton } from "@/components/auth/SignOutButton";
+import { useState } from "react";
 import { StudentSidebar } from "./StudentSidebar";
 
 type StudentTopNavProps = {
@@ -20,17 +19,7 @@ function initials(name: string) {
 }
 
 export function StudentTopNav({ studentName, avatarUrl }: StudentTopNavProps) {
-  const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
   const [open, setOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
-
-  async function signOut() {
-    setSigningOut(true);
-    await supabase.auth.signOut();
-    router.replace("/");
-    router.refresh();
-  }
 
   return (
     <>
@@ -70,18 +59,14 @@ export function StudentTopNav({ studentName, avatarUrl }: StudentTopNavProps) {
                 {initials(studentName)}
               </span>
             )}
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              disabled={signingOut}
+            <SignOutButton
+              label="Logout"
+              signingOutLabel="..."
               className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white disabled:opacity-60"
-            >
-              {signingOut ? "..." : "Logout"}
-            </button>
+            />
           </div>
         </div>
       </div>
     </>
   );
 }
-
