@@ -4,9 +4,9 @@ import { QuizQuestion } from "@/components/learning/QuizQuestion";
 import { useLessonProgress } from "@/hooks/useLessonProgress";
 import { type QuizAnswer, useQuiz } from "@/hooks/useQuiz";
 import { useStudent } from "@/hooks/useStudent";
-import { getLesson, type Lesson } from "@/lib/lessons/getLesson";
+import { getCanonicalLessonId, getLesson, type Lesson } from "@/lib/lessons/getLesson";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 function getSkill(questionMetadata: Record<string, unknown> | undefined) {
@@ -27,6 +27,7 @@ function isCorrect(expected: unknown, actual: QuizAnswer | undefined) {
 
 export default function QuizPage() {
   const params = useParams<{ moduleId: string; lessonId: string }>();
+  const router = useRouter();
   const moduleId = params.moduleId;
   const lessonId = params.lessonId;
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -74,8 +75,13 @@ export default function QuizPage() {
 
   useEffect(() => {
     let active = true;
+    const canonicalLessonId = getCanonicalLessonId(moduleId, lessonId);
 
-    void getLesson(moduleId, lessonId)
+    if (canonicalLessonId !== lessonId) {
+      router.replace(`/learn/${moduleId}/${canonicalLessonId}/quiz`);
+    }
+
+    void getLesson(moduleId, canonicalLessonId)
       .then((loadedLesson) => {
         if (active) {
           setLesson(loadedLesson);
@@ -91,7 +97,7 @@ export default function QuizPage() {
     return () => {
       active = false;
     };
-  }, [lessonId, moduleId]);
+  }, [lessonId, moduleId, router]);
 
   async function handleSubmit() {
     if (!student || !lesson) {
@@ -101,7 +107,7 @@ export default function QuizPage() {
     const result = await submitQuiz({
       student_id: student.id,
       module_id: moduleId,
-      lesson_id: lessonId,
+      lesson_id: lesson.lessonId,
       quiz_key: lesson.quiz.quiz_key,
       quiz_title: lesson.quiz.title,
       passing_score: lesson.quiz.passing_score,
@@ -112,7 +118,7 @@ export default function QuizPage() {
     });
 
     if (result?.passed) {
-      await completeLesson(lessonId, {
+      await completeLesson(lesson.lessonId, {
         module_id: moduleId,
         lesson_title: lesson.title,
         score: result.score,
@@ -192,7 +198,7 @@ export default function QuizPage() {
               Retry Quiz
             </button>
             <Link
-              href={`/learn/${moduleId}/${lessonId}`}
+              href={`/learn/${moduleId}/${lesson.lessonId}`}
               className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               Return to Lesson
@@ -211,7 +217,7 @@ export default function QuizPage() {
             <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">{lesson.quiz.title}</p>
             <h1 className="mt-1 text-2xl font-bold text-slate-950">{lesson.title}</h1>
           </div>
-          <Link href={`/learn/${moduleId}/${lessonId}`} className="text-sm font-semibold text-cyan-700">
+          <Link href={`/learn/${moduleId}/${lesson.lessonId}`} className="text-sm font-semibold text-cyan-700">
             Return to Lesson
           </Link>
         </div>

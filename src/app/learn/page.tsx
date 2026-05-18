@@ -28,10 +28,21 @@ type ModuleRow = {
   is_published: boolean;
 };
 
+type LessonRow = {
+  id: string;
+  module_id: string;
+  lesson_key: string | null;
+  order_index: number;
+};
+
+const FALLBACK_FIRST_LESSON: Record<string, string> = {
+  "week1-internet-html-css": "w1d1",
+};
+
 const FALLBACK_COURSE: CourseRow = {
   id: "programming-zero-to-hero",
   course_key: "programming-zero-to-hero",
-  title: "Programming Zero to Hero",
+  title: "12-Week Tech-Foundations Accelerator",
   description: "A 12-week teen-friendly path from web foundations to a deployed project presentation.",
   category: "programming",
   duration_weeks: 12,
@@ -65,7 +76,7 @@ const FALLBACK_MODULES: ModuleRow[] = [
 
 async function loadLearningCatalog() {
   const supabase = createClient(await cookies());
-  const [{ data: courseRows, error: courseError }, { data: moduleRows, error: moduleError }] = await Promise.all([
+  const [{ data: courseRows, error: courseError }, { data: moduleRows, error: moduleError }, { data: lessonRows }] = await Promise.all([
     supabase
       .from("courses")
       .select("id, course_key, title, description, category, duration_weeks, is_published, order_index")
@@ -76,12 +87,17 @@ async function loadLearningCatalog() {
       .select("id, course_id, module_key, title, description, order_index, week_number, is_published")
       .eq("is_published", true)
       .order("order_index", { ascending: true }),
+    supabase
+      .from("lessons")
+      .select("id, module_id, lesson_key, order_index")
+      .order("order_index", { ascending: true }),
   ]);
 
   if (courseError || moduleError || !courseRows?.length) {
     return {
       courses: [FALLBACK_COURSE],
       modules: FALLBACK_MODULES,
+      lessons: [],
       usingFallback: true,
     };
   }
@@ -89,13 +105,14 @@ async function loadLearningCatalog() {
   return {
     courses: courseRows as CourseRow[],
     modules: (moduleRows ?? []) as ModuleRow[],
+    lessons: (lessonRows ?? []) as LessonRow[],
     usingFallback: false,
   };
 }
 
 export default async function LearnPage({ searchParams }: LearnPageProps) {
   const params = await searchParams;
-  const { courses, modules, usingFallback } = await loadLearningCatalog();
+  const { courses, modules, lessons, usingFallback } = await loadLearningCatalog();
   const selectedCourse = courses.find((course) => course.course_key === params.course || course.id === params.course) ?? courses[0];
   const selectedModules = modules.filter((module) => module.course_id === selectedCourse.id || (usingFallback && selectedCourse.id === FALLBACK_COURSE.id));
 
@@ -106,7 +123,7 @@ export default async function LearnPage({ searchParams }: LearnPageProps) {
           <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Learning Hub</p>
           <h1 className="mt-3 text-3xl font-bold sm:text-4xl">Choose a course, then continue the next module.</h1>
           <p className="mt-3 max-w-2xl text-slate-300">
-            Programming Zero to Hero is the first 12-week course. New teen courses can be added here without changing the learning workflow.
+            12-Week Tech-Foundations Accelerator is the first course. New teen courses can be added here without changing the learning workflow.
           </p>
         </header>
 
@@ -142,10 +159,11 @@ export default async function LearnPage({ searchParams }: LearnPageProps) {
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               {selectedModules.map((module) => {
                 const moduleKey = module.module_key ?? module.id;
+                const firstLessonKey = lessons.find((lesson) => lesson.module_id === module.id)?.lesson_key ?? FALLBACK_FIRST_LESSON[moduleKey] ?? "intro";
                 return (
                   <Link
                     key={module.id}
-                    href={`/learn/${moduleKey}/intro`}
+                    href={`/learn/${moduleKey}/${firstLessonKey}`}
                     className="rounded-lg border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:shadow-md"
                   >
                     <p className="text-sm font-bold uppercase tracking-wide text-cyan-600">

@@ -86,7 +86,7 @@ insert into public.courses (
   (
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
     'programming-zero-to-hero',
-    'Programming Zero to Hero',
+    '12-Week Tech-Foundations Accelerator',
     'A 12-week teen-friendly path from web foundations to a deployed project presentation.',
     'programming',
     'teens',

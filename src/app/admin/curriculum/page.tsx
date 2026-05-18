@@ -2,6 +2,7 @@ import { CourseList, type CurriculumCourse } from "@/components/curriculum/Cours
 import { JsonUploadPanel } from "@/components/curriculum/JsonUploadPanel";
 import { LessonList, type CurriculumLesson } from "@/components/curriculum/LessonList";
 import { ModuleList, type CurriculumModule } from "@/components/curriculum/ModuleList";
+import { ModuleJsonUploadPanel } from "@/components/curriculum/ModuleJsonUploadPanel";
 import { VersionHistory, type CurriculumVersion } from "@/components/curriculum/VersionHistory";
 import { requireRole } from "@/lib/auth/roles";
 import { getLessonVersions } from "@/lib/curriculum/getLessonVersions";
@@ -77,7 +78,10 @@ async function CurriculumContent({ courseId, moduleId, lessonId }: { courseId?: 
 
         <section className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
           <LessonList moduleId={selectedModuleId} lessons={moduleLessons} selectedLessonId={selectedLessonId} />
-          <JsonUploadPanel lessonId={selectedLessonId} />
+          <div className="space-y-6">
+            <ModuleJsonUploadPanel courseId={selectedCourseId} />
+            <JsonUploadPanel lessonId={selectedLessonId} />
+          </div>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">

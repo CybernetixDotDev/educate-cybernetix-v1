@@ -30,8 +30,8 @@ export function AdminSidebar() {
           <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Educate Cybernetix</p>
           <h1 className="mt-1 text-2xl font-bold text-slate-950">Admin</h1>
         </div>
-        <Link href="/dashboard" className="text-sm font-semibold text-slate-500 hover:text-cyan-700 lg:hidden">
-          Student App
+        <Link href="/admin" className="text-sm font-semibold text-slate-500 hover:text-cyan-700 lg:hidden">
+          Dashboard
         </Link>
       </div>
       <nav className="mt-6 flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
@@ -45,8 +45,8 @@ export function AdminSidebar() {
           </Link>
         ))}
       </nav>
-      <Link href="/dashboard" className="mt-8 hidden text-sm font-semibold text-slate-500 hover:text-cyan-700 lg:block">
-        Back to Student App
+      <Link href="/admin" className="mt-8 hidden text-sm font-semibold text-slate-500 hover:text-cyan-700 lg:block">
+        Return to Dashboard
       </Link>
       <div className="mt-4 hidden border-t border-slate-200 pt-4 lg:block">
         <SignOutButton className="w-full rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" />

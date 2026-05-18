@@ -4,7 +4,7 @@ import { LessonContent } from "@/components/learning/LessonContent";
 import { MentorInlinePanel } from "@/components/learning/MentorInlinePanel";
 import { useLessonProgress } from "@/hooks/useLessonProgress";
 import { useStudent } from "@/hooks/useStudent";
-import { getLesson, getLessonNavigation, type Lesson } from "@/lib/lessons/getLesson";
+import { getCanonicalLessonId, getLesson, getLessonNavigation, type Lesson } from "@/lib/lessons/getLesson";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -25,14 +25,20 @@ export default function LessonPage() {
     completeLesson,
     refresh,
   } = useLessonProgress({ studentId: student?.id ?? null, moduleId });
-  const navigation = useMemo(() => getLessonNavigation(moduleId, lessonId), [lessonId, moduleId]);
-  const currentProgress = progress.find((item) => item.module_key === moduleId && item.lesson_key === lessonId);
+  const activeLessonId = lesson?.lessonId ?? lessonId;
+  const navigation = useMemo(() => getLessonNavigation(moduleId, activeLessonId), [activeLessonId, moduleId]);
+  const currentProgress = progress.find((item) => item.module_key === moduleId && item.lesson_key === activeLessonId);
   const isComplete = currentProgress?.status === "completed" || (currentProgress?.progress_percent ?? 0) >= 100;
 
   useEffect(() => {
     let active = true;
+    const canonicalLessonId = getCanonicalLessonId(moduleId, lessonId);
 
-    void getLesson(moduleId, lessonId)
+    if (canonicalLessonId !== lessonId) {
+      router.replace(`/learn/${moduleId}/${canonicalLessonId}`);
+    }
+
+    void getLesson(moduleId, canonicalLessonId)
       .then((loadedLesson) => {
         if (active) {
           setLesson(loadedLesson);
@@ -48,7 +54,7 @@ export default function LessonPage() {
     return () => {
       active = false;
     };
-  }, [lessonId, moduleId]);
+  }, [lessonId, moduleId, router]);
 
   async function handleMarkComplete() {
     if (!lesson || !student) {
@@ -123,7 +129,7 @@ export default function LessonPage() {
             <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <div className="grid gap-3 sm:grid-cols-3">
                 <Link
-                  href={`/learn/${moduleId}/${lessonId}/quiz`}
+                  href={`/learn/${moduleId}/${activeLessonId}/quiz`}
                   className="rounded-md bg-cyan-600 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-cyan-700"
                 >
                   Start Quiz
@@ -157,7 +163,7 @@ export default function LessonPage() {
             </section>
           </div>
 
-          <MentorInlinePanel studentId={student?.id ?? null} moduleId={moduleId} lessonId={lessonId} />
+          <MentorInlinePanel studentId={student?.id ?? null} moduleId={moduleId} lessonId={activeLessonId} />
         </div>
       </div>
     </main>

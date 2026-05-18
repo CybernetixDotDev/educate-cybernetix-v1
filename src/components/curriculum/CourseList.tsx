@@ -30,7 +30,7 @@ export function CourseList({ courses, selectedCourseId }: CourseListProps) {
         <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Courses</p>
         <h2 className="mt-1 text-xl font-black text-slate-950">Course categories</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Courses contain modules. Programming Zero to Hero is the first 12-week course.
+          Courses contain modules. 12-Week Tech-Foundations Accelerator is the first course.
         </p>
       </div>
 

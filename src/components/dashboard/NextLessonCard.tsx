@@ -23,6 +23,20 @@ const LESSONS = [
   ["checkpoint", "Checkpoint"],
 ] as const;
 
+const IMPORTED_LESSONS: Record<string, Array<readonly [string, string]>> = {
+  "week1-internet-html-css": [
+    ["w1d1", "How the Internet Works"],
+    ["w1d2", "HTML Structure"],
+    ["w1d3", "CSS Basics"],
+    ["w1d4", "Box Model & Layout"],
+    ["w1d5", "Responsive Design"],
+  ],
+};
+
+function getLessonsForModule(moduleId: string) {
+  return IMPORTED_LESSONS[moduleId] ?? LESSONS;
+}
+
 function findNextLesson(progress: DashboardLessonProgress[]) {
   const completed = new Set(
     progress
@@ -44,7 +58,7 @@ function findNextLesson(progress: DashboardLessonProgress[]) {
   }
 
   for (const [moduleId, moduleLabel, moduleTitle] of MODULES) {
-    for (const [lessonId, lessonTitle] of LESSONS) {
+    for (const [lessonId, lessonTitle] of getLessonsForModule(moduleId)) {
       if (!completed.has(`${moduleId}/${lessonId}`)) {
         return { moduleId, moduleLabel, moduleTitle, lessonId, lessonTitle, progress: 0 };
       }
@@ -63,12 +77,13 @@ function findNextLesson(progress: DashboardLessonProgress[]) {
 
 export function NextLessonCard({ lessonProgress }: { lessonProgress: DashboardLessonProgress[] }) {
   const nextLesson = findNextLesson(lessonProgress);
+  const lessonSteps = getLessonsForModule(nextLesson.moduleId);
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Programming Zero to Hero · Next Lesson</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">12-Week Tech-Foundations Accelerator · Next Lesson</p>
           <h2 className="mt-1 text-2xl font-black text-slate-950">{nextLesson.lessonTitle}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             {nextLesson.moduleLabel}: {nextLesson.moduleTitle}
@@ -85,7 +100,7 @@ export function NextLessonCard({ lessonProgress }: { lessonProgress: DashboardLe
         <ProgressBar value={nextLesson.progress} label="Lesson progress" tone="cyan" />
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        {LESSONS.map(([lessonId, title]) => {
+        {lessonSteps.map(([lessonId, title]) => {
           const row = lessonProgress.find((item) => item.module_key === nextLesson.moduleId && item.lesson_key === lessonId);
           const done = row?.status === "completed" || Number(row?.progress_percent ?? 0) >= 100;
           return (

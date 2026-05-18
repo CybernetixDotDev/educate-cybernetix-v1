@@ -30,13 +30,18 @@ export function LessonPreview({ lesson, quiz }: LessonPreviewProps) {
             {lesson.content.map((block, index) => (
               <article key={`${block.type}-${index}`} className="rounded-lg border border-slate-200 p-4">
                 <p className="text-xs font-black uppercase tracking-wide text-slate-400">{block.type}</p>
+                {block.title && <h4 className="mt-1 font-semibold text-slate-950">{block.title}</h4>}
                 {block.type === "code" ? (
                   <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-950 p-4 text-sm text-slate-50"><code>{block.value}</code></pre>
                 ) : block.type === "image" ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={block.value} alt="" className="mt-2 max-h-72 w-full rounded-lg object-cover" />
+                  <img src={block.url ?? block.value} alt={block.alt ?? block.title ?? ""} className="mt-2 max-h-72 w-full rounded-lg object-cover" />
+                ) : block.type === "video" ? (
+                  <a href={block.url ?? block.value} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-sm font-bold text-cyan-700 hover:text-cyan-900">
+                    Open video
+                  </a>
                 ) : (
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{block.value}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{block.value ?? block.url}</p>
                 )}
               </article>
             ))}
@@ -64,4 +69,3 @@ export function LessonPreview({ lesson, quiz }: LessonPreviewProps) {
     </section>
   );
 }
-
