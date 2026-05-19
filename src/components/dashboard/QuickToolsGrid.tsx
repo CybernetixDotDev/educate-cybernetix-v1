@@ -5,32 +5,30 @@ import Link from "next/link";
 const PRIMARY_ACTIONS = [
   {
     href: "/learn",
-    eyebrow: "Learn",
-    title: "Continue Learning",
-    description: "Pick up the next lesson, then take the checkpoint when you are ready.",
-    cta: "Open lessons",
+    eyebrow: "Step 1",
+    title: "Learn the concept",
+    description: "Open the next short lesson and understand the idea before building.",
+    cta: "Continue course",
   },
   {
     href: "/project-mentor",
-    eyebrow: "Build",
-    title: "Continue Project",
-    description: "Work through your current MVP task list and keep your project moving.",
+    eyebrow: "Step 2",
+    title: "Build the mission",
+    description: "Apply the lesson to your project and finish one practical task.",
     cta: "Open project",
   },
   {
     href: "/mentor",
-    eyebrow: "Ask",
+    eyebrow: "Any time",
     title: "Ask Cyber Mentor",
-    description: "Explain a lesson, fix an error, review code, plan a feature, or prepare a demo from one chat.",
+    description: "Get help with the lesson, project, debugging, code review, quiz prep, or presentation practice.",
     cta: "Ask for help",
   },
 ] as const;
 
 const SECONDARY_ACTIONS = [
+  { href: "/growth-timeline", label: "View progress" },
   { href: "/certificates", label: "Certificates" },
-  { href: "/growth-timeline", label: "Growth Timeline" },
-  { href: "/mentor?intent=debug", label: "Debug with Mentor" },
-  { href: "/mentor?intent=review", label: "Review code with Mentor" },
 ] as const;
 
 export function QuickToolsGrid() {
@@ -38,11 +36,11 @@ export function QuickToolsGrid() {
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Today&apos;s Workflow</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">How today works</p>
           <h2 className="mt-1 text-xl font-semibold text-slate-950">Learn, build, ask when stuck</h2>
         </div>
         <p className="max-w-xl text-sm leading-6 text-slate-600">
-          Cyber Mentor automatically switches between teacher, project builder, debugger, code reviewer, quiz coach, and presentation coach.
+          Cyber Mentor is one assistant behind the scenes. You do not need to choose a separate debugging, review, or presentation tool.
         </p>
       </div>
 

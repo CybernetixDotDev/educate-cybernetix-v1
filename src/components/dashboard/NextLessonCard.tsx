@@ -25,11 +25,11 @@ const LESSONS = [
 
 const IMPORTED_LESSONS: Record<string, Array<readonly [string, string]>> = {
   "week1-internet-html-css": [
-    ["w1d1", "How the Internet Works"],
-    ["w1d2", "HTML Structure"],
-    ["w1d3", "CSS Basics"],
-    ["w1d4", "Box Model & Layout"],
-    ["w1d5", "Responsive Design"],
+    ["w1l1", "How the Internet Works"],
+    ["w1l2", "HTML Structure"],
+    ["w1l3", "CSS Basics"],
+    ["w1l4", "Box Model & Layout"],
+    ["w1l5", "Responsive Design"],
   ],
 };
 
@@ -83,7 +83,7 @@ export function NextLessonCard({ lessonProgress }: { lessonProgress: DashboardLe
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">12-Week Tech-Foundations Accelerator · Next Lesson</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Today&apos;s Lesson</p>
           <h2 className="mt-1 text-2xl font-black text-slate-950">{nextLesson.lessonTitle}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             {nextLesson.moduleLabel}: {nextLesson.moduleTitle}
@@ -93,7 +93,7 @@ export function NextLessonCard({ lessonProgress }: { lessonProgress: DashboardLe
           href={`/learn/${nextLesson.moduleId}/${nextLesson.lessonId}`}
           className="rounded-md bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700"
         >
-          Continue Learning
+          Continue Course
         </Link>
       </div>
       <div className="mt-6">

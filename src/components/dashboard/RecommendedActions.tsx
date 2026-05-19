@@ -22,38 +22,38 @@ export function RecommendedActions({
   const hasMentor = mentorInteractions.length > 0;
   const actions = [
     {
-      title: "Continue Lesson",
-      body: "Keep your course progress moving with the next short lesson block.",
+      title: "Open today's lesson",
+      body: "Start with the next lesson. Read it, try the task, then take the checkpoint.",
       href: nextLessonHref(lessonProgress),
     },
     openTasks.length > 0
       ? {
-          title: "Complete 2 project tasks",
-          body: `${openTasks.length} task${openTasks.length === 1 ? "" : "s"} still open on your current project.`,
+          title: "Finish one project task",
+          body: `${openTasks.length} task${openTasks.length === 1 ? "" : "s"} still open on your current mission.`,
           href: "/mentor?intent=project",
         }
       : {
-          title: "Plan your project",
-          body: "Ask Cyber Mentor to create a clear next build plan.",
+          title: "Create your build plan",
+          body: "Ask Cyber Mentor to turn your course topic into a simple project task list.",
           href: "/mentor?intent=project",
         },
     lastQuiz && Number(lastQuiz.score) < 80
       ? {
-          title: "Review your last quiz",
-          body: `Your last score was ${Math.round(Number(lastQuiz.score))}%. Ask for a quick explanation.`,
+          title: "Review the checkpoint",
+          body: `Your last score was ${Math.round(Number(lastQuiz.score))}%. Ask Cyber Mentor to explain the missed ideas.`,
           href: "/mentor",
         }
       : {
-          title: hasMentor ? "Ask one stuck question" : "Ask Cyber Mentor",
-          body: "Bring one stuck point, design decision, or debugging issue.",
+          title: hasMentor ? "Ask one useful question" : "Meet Cyber Mentor",
+          body: "Bring one stuck point from the lesson or project. Cyber Mentor will choose the right help mode.",
           href: "/mentor",
         },
   ];
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Recommended Actions</p>
-      <h2 className="mt-1 text-xl font-black text-slate-950">Do these next</h2>
+      <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Next Steps</p>
+      <h2 className="mt-1 text-xl font-black text-slate-950">Do these in order</h2>
       <div className="mt-5 space-y-3">
         {actions.map((action, index) => (
           <Link key={action.title} href={action.href} className="block rounded-lg border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-200 hover:bg-cyan-50">

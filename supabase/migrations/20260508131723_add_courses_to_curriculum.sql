@@ -85,7 +85,7 @@ insert into public.courses (
 ) values
   (
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
-    'programming-zero-to-hero',
+    '12-week-tech-foundations-accelerator',
     '12-Week Tech-Foundations Accelerator',
     'A 12-week teen-friendly path from web foundations to a deployed project presentation.',
     'programming',
@@ -162,18 +162,18 @@ set
 
 insert into public.modules (module_key, course_id, title, description, order_index, week_number, is_published, metadata)
 values
-  ('week1-internet-html-css', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Internet, HTML, and CSS', 'Foundations of the web: networks, pages, HTML structure, and CSS styling.', 1, 1, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week2-tailwind-uiux', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Tailwind and UI/UX', 'Design clean responsive interfaces with utility CSS and user-centered thinking.', 2, 2, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week3-git-github-terminal', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Git, GitHub, and Terminal', 'Use professional developer workflows for version control and command-line work.', 3, 3, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week4-javascript-fundamentals', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'JavaScript Fundamentals', 'Learn variables, functions, arrays, objects, events, and problem-solving patterns.', 4, 4, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week5-nextjs-fundamentals', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Next.js Fundamentals', 'Build modern React apps with routes, components, rendering, and data flow.', 5, 5, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week6-apis-datafetching', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'APIs and Data Fetching', 'Connect apps to external data and handle loading, errors, and response shapes.', 6, 6, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week7-supabase-database-auth', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Supabase Database and Auth', 'Add database-backed features, authentication, and secure user data.', 7, 7, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week8-threejs-fundamentals', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Three.js Fundamentals', 'Create interactive 3D scenes and visual product experiences.', 8, 8, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week9-project-planning', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Project Planning', 'Choose an MVP, define user stories, plan milestones, and prepare a build strategy.', 9, 9, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week10-build-phase-1', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Build Phase 1', 'Start implementation, wire core features, and build a usable first version.', 10, 10, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week11-build-phase-2', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Build Phase 2', 'Improve quality, fix bugs, polish UX, and prepare the project for demo.', 11, 11, true, '{"course_key":"programming-zero-to-hero"}'::jsonb),
-  ('week12-deploy-present', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Deploy and Present', 'Deploy the finished project and prepare a confident presentation.', 12, 12, true, '{"course_key":"programming-zero-to-hero"}'::jsonb)
+  ('week1-internet-html-css', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Internet, HTML, and CSS', 'Foundations of the web: networks, pages, HTML structure, and CSS styling.', 1, 1, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week2-tailwind-uiux', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Tailwind and UI/UX', 'Design clean responsive interfaces with utility CSS and user-centered thinking.', 2, 2, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week3-git-github-terminal', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Git, GitHub, and Terminal', 'Use professional developer workflows for version control and command-line work.', 3, 3, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week4-javascript-fundamentals', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'JavaScript Fundamentals', 'Learn variables, functions, arrays, objects, events, and problem-solving patterns.', 4, 4, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week5-nextjs-fundamentals', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Next.js Fundamentals', 'Build modern React apps with routes, components, rendering, and data flow.', 5, 5, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week6-apis-datafetching', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'APIs and Data Fetching', 'Connect apps to external data and handle loading, errors, and response shapes.', 6, 6, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week7-supabase-database-auth', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Supabase Database and Auth', 'Add database-backed features, authentication, and secure user data.', 7, 7, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week8-threejs-fundamentals', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Three.js Fundamentals', 'Create interactive 3D scenes and visual product experiences.', 8, 8, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week9-project-planning', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Project Planning', 'Choose an MVP, define user stories, plan milestones, and prepare a build strategy.', 9, 9, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week10-build-phase-1', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Build Phase 1', 'Start implementation, wire core features, and build a usable first version.', 10, 10, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week11-build-phase-2', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Build Phase 2', 'Improve quality, fix bugs, polish UX, and prepare the project for demo.', 11, 11, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb),
+  ('week12-deploy-present', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'Deploy and Present', 'Deploy the finished project and prepare a confident presentation.', 12, 12, true, '{"course_key":"12-week-tech-foundations-accelerator"}'::jsonb)
 on conflict (module_key) do update
 set
   course_id = excluded.course_id,

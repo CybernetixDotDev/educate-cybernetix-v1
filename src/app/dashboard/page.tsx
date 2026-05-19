@@ -227,10 +227,10 @@ async function DashboardCommandCenter() {
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Student Command Center</p>
-                  <h1 className="mt-2 truncate text-3xl font-bold sm:text-4xl">Welcome back, {data.student.display_name}</h1>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">12-Week Tech-Foundations Accelerator</p>
+                  <h1 className="mt-2 truncate text-3xl font-bold sm:text-4xl">Today&apos;s work, {data.student.display_name}</h1>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                    Your next lesson, project work, mentor insights, and growth tools are all in one place.
+                    Follow one simple path: learn the concept, build the mission, and ask Cyber Mentor when you need help.
                   </p>
                 </div>
               </div>

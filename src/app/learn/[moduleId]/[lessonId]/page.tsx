@@ -43,6 +43,10 @@ export default function LessonPage() {
         if (active) {
           setLesson(loadedLesson);
           setLessonError(null);
+
+          if (loadedLesson.lessonId !== canonicalLessonId) {
+            router.replace(`/learn/${loadedLesson.moduleId}/${loadedLesson.lessonId}`);
+          }
         }
       })
       .catch((error) => {

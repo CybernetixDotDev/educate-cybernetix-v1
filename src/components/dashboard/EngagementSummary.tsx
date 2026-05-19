@@ -17,7 +17,7 @@ export function EngagementSummary({ sessionLogs, streaks }: { sessionLogs: Dashb
       <h2 className="mt-1 text-xl font-black text-slate-950">Learning rhythm</h2>
       <div className="mt-5 grid grid-cols-3 gap-3">
         <div className="rounded-lg bg-amber-50 p-3 text-center">
-          <p className="text-2xl font-black text-amber-700">🔥 {streak}</p>
+          <p className="text-2xl font-black text-amber-700">{streak}</p>
           <p className="mt-1 text-xs font-semibold text-amber-800">day streak</p>
         </div>
         <div className="rounded-lg bg-cyan-50 p-3 text-center">
@@ -33,4 +33,3 @@ export function EngagementSummary({ sessionLogs, streaks }: { sessionLogs: Dashb
     </section>
   );
 }
-

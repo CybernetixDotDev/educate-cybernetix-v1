@@ -49,7 +49,7 @@ export async function publishModuleJson(courseId: string | null, moduleJson: unk
     const { data: defaultCourse } = await supabase
       .from("courses")
       .select("id")
-      .eq("course_key", "programming-zero-to-hero")
+      .eq("course_key", "12-week-tech-foundations-accelerator")
       .maybeSingle();
 
     resolvedCourseId = defaultCourse?.id ?? null;

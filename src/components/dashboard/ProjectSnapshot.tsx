@@ -11,10 +11,10 @@ export function ProjectSnapshot({ project }: { project: DashboardProject | null 
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Project Snapshot</p>
-          <h2 className="mt-1 text-xl font-black text-slate-950">{project?.title ?? "Choose a capstone project"}</h2>
+          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Current Mission</p>
+          <h2 className="mt-1 text-xl font-black text-slate-950">{project?.title ?? "Build your first real project"}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            {project?.description ?? "Use the Project Mentor to generate tasks and start building your MVP."}
+            {project?.description ?? "Your course work turns into a portfolio project. Ask Cyber Mentor to create the first build plan when you are ready."}
           </p>
         </div>
         <Link href="/mentor?intent=project" className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
@@ -33,7 +33,7 @@ export function ProjectSnapshot({ project }: { project: DashboardProject | null 
             </span>
           </div>
         ))}
-        {tasks.length === 0 && <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No project tasks yet. Ask Cyber Mentor to help turn your idea into a build plan.</p>}
+        {tasks.length === 0 && <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No project tasks yet. Start with the next lesson, then ask Cyber Mentor to turn it into a project task.</p>}
       </div>
     </section>
   );

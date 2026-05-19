@@ -135,16 +135,16 @@ const LESSON_ORDER = ["intro", "practice", "checkpoint"] as const;
 
 const IMPORTED_LESSON_ORDER: Record<string, Array<{ lessonId: string; title: string }>> = {
   "week1-internet-html-css": [
-    { lessonId: "w1d1", title: "How the Internet Works" },
-    { lessonId: "w1d2", title: "HTML Structure" },
-    { lessonId: "w1d3", title: "CSS Basics" },
-    { lessonId: "w1d4", title: "Box Model & Layout" },
-    { lessonId: "w1d5", title: "Responsive Design" },
+    { lessonId: "w1l1", title: "How the Internet Works" },
+    { lessonId: "w1l2", title: "HTML Structure" },
+    { lessonId: "w1l3", title: "CSS Basics" },
+    { lessonId: "w1l4", title: "Box Model & Layout" },
+    { lessonId: "w1l5", title: "Responsive Design" },
   ],
 };
 
 const IMPORTED_FIRST_LESSON: Record<string, string> = {
-  "week1-internet-html-css": "w1d1",
+  "week1-internet-html-css": "w1l1",
 };
 
 const WEEK1_AUTHORED_LESSONS: Record<string, LessonVersionJson> = {
@@ -278,7 +278,15 @@ function getSkill(moduleId: string) {
 }
 
 export function getCanonicalLessonId(moduleId: string, lessonId: string) {
-  return lessonId === "intro" ? IMPORTED_FIRST_LESSON[moduleId] ?? lessonId : lessonId;
+  if (lessonId === "intro") {
+    return IMPORTED_FIRST_LESSON[moduleId] ?? lessonId;
+  }
+
+  if (moduleId === "week1-internet-html-css" && /^w1d\d+$/.test(lessonId)) {
+    return lessonId.replace("w1d", "w1l");
+  }
+
+  return lessonId;
 }
 
 function buildLesson(moduleId: string, lessonId: string): Lesson {
@@ -335,7 +343,8 @@ function buildLesson(moduleId: string, lessonId: string): Lesson {
 function buildAuthoredFallbackLesson(moduleId: string, lessonId: string) {
   if (moduleId !== "week1-internet-html-css") return null;
 
-  const authoredLesson = WEEK1_AUTHORED_LESSONS[lessonId];
+  const fallbackLessonId = lessonId.replace("w1l", "w1d");
+  const authoredLesson = WEEK1_AUTHORED_LESSONS[lessonId] ?? WEEK1_AUTHORED_LESSONS[fallbackLessonId];
   return authoredLesson ? transformLesson(moduleId, lessonId, authoredLesson, authoredLesson.quiz ?? null) : null;
 }
 
@@ -472,7 +481,9 @@ async function fetchFirstLessonRow(moduleId: string): Promise<LessonRow | null> 
 export async function getLesson(moduleId: string, lessonId: string): Promise<Lesson> {
   const supabase = createClient();
   const canonicalLessonId = getCanonicalLessonId(moduleId, lessonId);
-  const lessonRow = (await fetchLessonRow(moduleId, canonicalLessonId)) ?? (lessonId === "intro" ? await fetchFirstLessonRow(moduleId) : null);
+  const firstLessonAlias = IMPORTED_FIRST_LESSON[moduleId];
+  const shouldUseFirstLesson = lessonId === "intro" || canonicalLessonId === firstLessonAlias;
+  const lessonRow = (await fetchLessonRow(moduleId, canonicalLessonId)) ?? (shouldUseFirstLesson ? await fetchFirstLessonRow(moduleId) : null);
   const lessonVersion = lessonRow?.lesson_versions?.find((version) => version.id === lessonRow.current_version_id) ?? lessonRow?.lesson_versions?.[0];
 
   if (!lessonRow || !lessonVersion?.content_json) {

@@ -86,6 +86,10 @@ export default function QuizPage() {
         if (active) {
           setLesson(loadedLesson);
           setLessonError(null);
+
+          if (loadedLesson.lessonId !== canonicalLessonId) {
+            router.replace(`/learn/${loadedLesson.moduleId}/${loadedLesson.lessonId}/quiz`);
+          }
         }
       })
       .catch((error) => {

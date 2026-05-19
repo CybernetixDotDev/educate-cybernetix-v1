@@ -23,38 +23,32 @@ function Icon({ children }: { children: ReactNode }) {
 export const STUDENT_NAV_ITEMS: StudentNavItem[] = [
   {
     href: "/dashboard",
-    label: "Dashboard",
-    description: "Progress, streaks, next steps",
+    label: "Home",
+    description: "Today, mission, next step",
     icon: <Icon><path d="M4 13h6V4H4v9Z" /><path d="M14 20h6V4h-6v16Z" /><path d="M4 20h6v-3H4v3Z" /></Icon>,
   },
   {
     href: "/learn",
-    label: "Learn",
-    description: "Lessons and quizzes",
+    label: "My Course",
+    description: "Lessons and checkpoints",
     icon: <Icon><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z" /></Icon>,
+  },
+  {
+    href: "/project-mentor",
+    label: "My Project",
+    description: "Build the weekly mission",
+    icon: <Icon><path d="M12 3 3 8l9 5 9-5-9-5Z" /><path d="m3 13 9 5 9-5" /></Icon>,
   },
   {
     href: "/mentor",
     label: "Cyber Mentor",
-    description: "One place for help when stuck",
+    description: "Ask for help with anything",
     icon: <Icon><path d="M12 3v3" /><path d="M5 8h14v10a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V8Z" /><path d="M9 13h.01" /><path d="M15 13h.01" /></Icon>,
   },
   {
-    href: "/project-mentor",
-    label: "Build Project",
-    description: "Your MVP tasks and progress",
-    icon: <Icon><path d="M12 3 3 8l9 5 9-5-9-5Z" /><path d="m3 13 9 5 9-5" /></Icon>,
-  },
-  {
-    href: "/certificates",
-    label: "Progress",
-    description: "Certificates and skill proof",
-    icon: <Icon><path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" /><path d="M5 6H3v2a4 4 0 0 0 4 4" /><path d="M19 6h2v2a4 4 0 0 1-4 4" /></Icon>,
-  },
-  {
     href: "/growth-timeline",
-    label: "Growth Timeline",
-    description: "Milestones and progress",
+    label: "Progress",
+    description: "Milestones and certificates",
     icon: <Icon><path d="M4 19V5" /><path d="M4 17h5l2-4 3 2 3-7h3" /></Icon>,
   },
 ];
@@ -74,7 +68,7 @@ export function StudentSidebar({ open = true, onNavigate }: { open?: boolean; on
     >
       <div className="rounded-2xl bg-slate-950 p-4 text-white">
         <p className="text-xs font-black uppercase tracking-wide text-cyan-300">Educate Cybernetix</p>
-        <h2 className="mt-1 text-xl font-black">Student Tools</h2>
+        <h2 className="mt-1 text-xl font-black">Student Home</h2>
       </div>
       <nav className="mt-5 space-y-1">
         {STUDENT_NAV_ITEMS.map((item) => {

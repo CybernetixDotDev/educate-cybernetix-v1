@@ -36,12 +36,12 @@ type LessonRow = {
 };
 
 const FALLBACK_FIRST_LESSON: Record<string, string> = {
-  "week1-internet-html-css": "w1d1",
+  "week1-internet-html-css": "w1l1",
 };
 
 const FALLBACK_COURSE: CourseRow = {
-  id: "programming-zero-to-hero",
-  course_key: "programming-zero-to-hero",
+  id: "12-week-tech-foundations-accelerator",
+  course_key: "12-week-tech-foundations-accelerator",
   title: "12-Week Tech-Foundations Accelerator",
   description: "A 12-week teen-friendly path from web foundations to a deployed project presentation.",
   category: "programming",

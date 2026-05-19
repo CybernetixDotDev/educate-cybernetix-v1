@@ -48,7 +48,7 @@ export function StudentTopNav({ studentName, avatarUrl }: StudentTopNavProps) {
           </button>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-black text-slate-950">{studentName}</p>
-            <p className="text-xs font-semibold text-slate-500">Student workspace</p>
+            <p className="text-xs font-semibold text-slate-500">Today&apos;s course work</p>
           </div>
           <div className="flex items-center gap-2">
             {avatarUrl ? (
