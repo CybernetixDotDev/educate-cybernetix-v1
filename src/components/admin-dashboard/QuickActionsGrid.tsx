@@ -16,17 +16,17 @@ const ACTIONS = [
 
 export function QuickActionsGrid() {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Quick Actions</p>
-        <h2 className="mt-1 text-xl font-black text-slate-950">Admin tools</h2>
+        <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Quick Actions</p>
+        <h2 className="mt-1 text-2xl font-black text-slate-950">Admin tools</h2>
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {ACTIONS.map((action) => (
           <Link
             key={`${action.href}-${action.label}`}
             href={action.href}
-            className="rounded-lg border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-200 hover:bg-cyan-50"
+            className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-teal-200 hover:bg-teal-50"
           >
             <p className="text-sm font-black text-slate-950">{action.label}</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">{action.description}</p>
@@ -36,4 +36,3 @@ export function QuickActionsGrid() {
     </section>
   );
 }
-

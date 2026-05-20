@@ -27,7 +27,7 @@ export function StudentSelector({ students, selectedStudentId }: StudentSelector
           params.set("studentId", event.target.value);
           router.push(`/parent/dashboard?${params.toString()}`);
         }}
-        className="w-full rounded-md border border-white/20 bg-white px-4 py-2 text-sm font-bold text-slate-950 shadow-sm outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-200 sm:min-w-64"
+        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-950 shadow-sm outline-none transition focus:border-teal-300 focus:ring-2 focus:ring-teal-100 sm:min-w-64"
       >
         {students.map((student) => (
           <option key={student.id} value={student.id}>
@@ -39,4 +39,3 @@ export function StudentSelector({ students, selectedStudentId }: StudentSelector
     </label>
   );
 }
-

@@ -370,14 +370,17 @@ async function ParentDashboardContent({ selectedStudentId }: { selectedStudentId
 
   return (
     <ParentDashboardLayout>
-      <header className="rounded-lg bg-slate-950 p-6 text-white shadow-sm sm:p-8">
+      <header className="rounded-3xl border border-teal-100 bg-white p-7 text-slate-950 shadow-sm sm:p-10">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Parent Dashboard</p>
-            <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Welcome, {getParentName(user)}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Parent View</p>
+            <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Welcome, {getParentName(user)}</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
               A clear weekly view of {selectedStudent.display_name}&apos;s learning rhythm, project momentum, and support needs.
             </p>
+            <div className="mt-5 inline-flex rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-bold text-teal-900">
+              You are here: Parent view &rarr; Next step: Support the weekly mission
+            </div>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <StudentSelector
@@ -390,7 +393,7 @@ async function ParentDashboardContent({ selectedStudentId }: { selectedStudentId
             />
             <Link
               href={`/parent/reports/${monthlyReportMonth}?studentId=${selectedStudent.id}`}
-              className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+              className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-teal-700"
             >
               Monthly Reports
             </Link>

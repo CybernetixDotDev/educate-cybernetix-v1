@@ -24,13 +24,13 @@ const NAV_ITEMS = [
 
 export function AdminSidebar() {
   return (
-    <aside className="border-b border-slate-200 bg-white/90 p-4 backdrop-blur lg:sticky lg:top-0 lg:h-screen lg:w-72 lg:border-b-0 lg:border-r">
+    <aside className="border-b border-teal-100 bg-white/95 p-4 backdrop-blur lg:sticky lg:top-0 lg:h-screen lg:w-72 lg:border-b-0 lg:border-r">
       <div className="flex items-center justify-between gap-3 lg:block">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Educate Cybernetix</p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-950">Admin</h1>
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Educate Cybernetix</p>
+          <h1 className="mt-1 text-2xl font-black text-slate-950">Admin Studio</h1>
         </div>
-        <Link href="/admin" className="text-sm font-semibold text-slate-500 hover:text-cyan-700 lg:hidden">
+        <Link href="/admin" className="text-sm font-semibold text-slate-500 hover:text-teal-700 lg:hidden">
           Dashboard
         </Link>
       </div>
@@ -39,20 +39,20 @@ export function AdminSidebar() {
           <Link
             key={item.href}
             href={item.href}
-            className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-cyan-50 hover:text-cyan-800"
+            className="whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-teal-50 hover:text-teal-800"
           >
             {item.label}
           </Link>
         ))}
       </nav>
-      <Link href="/admin" className="mt-8 hidden text-sm font-semibold text-slate-500 hover:text-cyan-700 lg:block">
+      <Link href="/admin" className="mt-8 hidden text-sm font-semibold text-slate-500 hover:text-teal-700 lg:block">
         Return to Dashboard
       </Link>
       <div className="mt-4 hidden border-t border-slate-200 pt-4 lg:block">
-        <SignOutButton className="w-full rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" />
+        <SignOutButton className="w-full rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" />
       </div>
       <div className="mt-4 lg:hidden">
-        <SignOutButton className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" />
+        <SignOutButton className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" />
       </div>
     </aside>
   );

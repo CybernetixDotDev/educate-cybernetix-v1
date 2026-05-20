@@ -192,7 +192,7 @@ async function loadDashboardData(): Promise<DashboardData> {
 
 function DashboardFallback() {
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#f7faf9] px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="h-52 animate-pulse rounded-lg bg-white shadow-sm" />
         <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
@@ -211,37 +211,40 @@ async function DashboardCommandCenter() {
   const streak = data.streaks[0]?.current_count ?? 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950 lg:flex">
+    <div className="min-h-screen bg-[#f7faf9] text-slate-950 lg:flex">
       <StudentTopNav studentName={data.student.display_name} avatarUrl={data.student.avatar_url} />
       <main className="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl space-y-6">
-          <header className="overflow-hidden rounded-lg bg-slate-950 text-white shadow-sm">
-            <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="mx-auto max-w-6xl space-y-8">
+          <header className="overflow-hidden rounded-3xl border border-teal-100 bg-white text-slate-950 shadow-sm">
+            <div className="grid gap-8 p-7 sm:p-10 lg:grid-cols-[1fr_18rem] lg:items-center">
               <div className="flex min-w-0 items-center gap-4">
                 {data.student.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={data.student.avatar_url} alt="" className="h-16 w-16 rounded-2xl object-cover ring-2 ring-cyan-300/60" />
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-300 text-2xl font-black text-slate-950">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-100 text-2xl font-black text-teal-800">
                     {data.student.display_name.slice(0, 1).toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">12-Week Tech-Foundations Accelerator</p>
-                  <h1 className="mt-2 truncate text-3xl font-bold sm:text-4xl">Today&apos;s work, {data.student.display_name}</h1>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">You are becoming a creator</p>
+                  <h1 className="mt-2 text-4xl font-black leading-tight tracking-tight sm:text-5xl">Today&apos;s work, {data.student.display_name}</h1>
+                  <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
                     Follow one simple path: learn the concept, build the mission, and ask Cyber Mentor when you need help.
                   </p>
+                  <div className="mt-5 inline-flex rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-bold text-teal-900">
+                    You are here: Home &rarr; Next step: Continue course
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:min-w-72">
-                <div className="rounded-lg bg-white/10 p-4">
-                  <p className="text-sm text-slate-300">Streak</p>
-                  <p className="mt-1 text-3xl font-bold">{streak}d</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-teal-50 p-4">
+                  <p className="text-sm font-semibold text-teal-800">Streak</p>
+                  <p className="mt-1 text-3xl font-black text-teal-950">{streak}d</p>
                 </div>
-                <div className="rounded-lg bg-white/10 p-4">
-                  <p className="text-sm text-slate-300">Minutes</p>
-                  <p className="mt-1 text-3xl font-bold">{minutes}</p>
+                <div className="rounded-2xl bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-800">XP minutes</p>
+                  <p className="mt-1 text-3xl font-black text-amber-950">{minutes}</p>
                 </div>
               </div>
             </div>

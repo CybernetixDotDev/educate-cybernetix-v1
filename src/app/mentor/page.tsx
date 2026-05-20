@@ -52,38 +52,40 @@ function MentorChatPageContent() {
   }
 
   return (
-    <main className="flex h-screen flex-col bg-gradient-to-br from-slate-50 via-cyan-50 to-violet-50 text-slate-950">
-      <header className="border-b border-white/70 bg-white/85 px-4 py-4 shadow-sm backdrop-blur sm:px-6">
+    <main className="flex h-screen flex-col bg-[#f7faf9] text-slate-950">
+      <header className="border-b border-teal-100 bg-white/90 px-4 py-4 shadow-sm backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-500 text-lg font-black text-white shadow-sm">
-              AI
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-100 text-lg font-black text-teal-900 shadow-sm">
+              CM
             </div>
             <div>
               <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-slate-950">Cyber Mentor</h1>
-                <Link href="/dashboard" className="hidden text-sm font-semibold text-cyan-700 hover:text-cyan-900 sm:inline">
-                  Dashboard
+                <h1 className="text-xl font-black text-slate-950">Cyber Mentor</h1>
+                <Link href="/dashboard" className="hidden text-sm font-bold text-teal-700 hover:text-teal-900 sm:inline">
+                  Home
                 </Link>
               </div>
               <p className="text-sm text-slate-500">
-                {studentLoading ? "Loading your profile..." : student ? `Chatting with ${student.display_name}` : "Sign in to chat"}
+                {studentLoading ? "Loading your profile..." : student ? `Here with you, ${student.display_name}` : "Sign in to chat"}
               </p>
             </div>
           </div>
-          <div className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600">
-            Auto-routes to: <span className="text-slate-950">{mode}</span>
+          <div className="rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-bold text-teal-900">
+            You are here: Mentor &rarr; Next step: Ask one clear question
           </div>
         </div>
       </header>
 
       <section className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
         <div className="mx-auto flex min-h-full max-w-6xl flex-col gap-4">
-          <div className="rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur">
-            <p className="text-sm font-semibold uppercase tracking-wide text-violet-600">One mentor, the right help</p>
-            <h2 className="mt-1 text-2xl font-bold text-slate-950">Tell Cyber Mentor what you are working on or where you are stuck.</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              It will route the request internally to teaching, quiz coaching, project planning, debugging, code review, or presentation help.
+          <div className="rounded-3xl border border-teal-100 bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">One mentor, the right kind of help</p>
+            <h2 className="mt-2 max-w-3xl text-3xl font-black leading-tight tracking-tight text-slate-950">
+              Tell Cyber Mentor what you are trying to do.
+            </h2>
+            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
+              It can explain a lesson, guide a project step, help debug code, review your work, quiz you gently, or prepare you to present.
             </p>
           </div>
 
@@ -101,7 +103,7 @@ function MentorChatPageContent() {
                     type="button"
                     onClick={() => void handleSend(prompt)}
                     disabled={!student || loading}
-                    className="rounded-2xl border border-white/80 bg-white/80 p-4 text-left text-sm font-medium text-slate-700 shadow-sm transition hover:border-cyan-300 hover:text-cyan-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-3xl border border-slate-200 bg-white p-5 text-left text-sm font-bold leading-6 text-slate-700 shadow-sm transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-900 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {prompt}
                   </button>
@@ -123,11 +125,11 @@ function MentorChatPageContent() {
         </div>
       </section>
 
-      <footer className="sticky bottom-0 border-t border-white/70 bg-white/85 px-4 py-4 backdrop-blur sm:px-6">
+      <footer className="sticky bottom-0 border-t border-teal-100 bg-white/90 px-4 py-4 backdrop-blur sm:px-6">
         <div className="mx-auto max-w-6xl">
           <ChatInput
             disabled={!student || loading}
-            placeholder={student ? "Ask Cyber Mentor anything about the lesson, project, code, quiz, or presentation..." : "Sign in to ask your mentor"}
+            placeholder={student ? "Ask Cyber Mentor one thing you want help with..." : "Sign in to ask your mentor"}
             onSend={handleSend}
           />
         </div>

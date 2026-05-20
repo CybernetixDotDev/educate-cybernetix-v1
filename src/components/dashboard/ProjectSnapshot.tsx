@@ -8,16 +8,16 @@ export function ProjectSnapshot({ project }: { project: DashboardProject | null 
   const progress = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Current Mission</p>
-          <h2 className="mt-1 text-xl font-black text-slate-950">{project?.title ?? "Build your first real project"}</h2>
+          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Current Mission</p>
+          <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{project?.title ?? "Build your first real project"}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             {project?.description ?? "Your course work turns into a portfolio project. Ask Cyber Mentor to create the first build plan when you are ready."}
           </p>
         </div>
-        <Link href="/mentor?intent=project" className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
+        <Link href="/mentor?intent=project" className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
           Ask Cyber Mentor
         </Link>
       </div>
@@ -26,7 +26,7 @@ export function ProjectSnapshot({ project }: { project: DashboardProject | null 
       </div>
       <div className="mt-5 space-y-2">
         {tasks.slice(0, 4).map((task) => (
-          <div key={task.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+          <div key={task.id} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm">
             <span className="font-semibold text-slate-800">{task.title}</span>
             <span className={`rounded-full px-2 py-1 text-xs font-bold ${task.status === "completed" || task.status === "done" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}>
               {task.status}

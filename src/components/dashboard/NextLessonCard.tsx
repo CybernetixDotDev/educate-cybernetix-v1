@@ -80,18 +80,18 @@ export function NextLessonCard({ lessonProgress }: { lessonProgress: DashboardLe
   const lessonSteps = getLessonsForModule(nextLesson.moduleId);
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-3xl border border-teal-100 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Today&apos;s Lesson</p>
-          <h2 className="mt-1 text-2xl font-black text-slate-950">{nextLesson.lessonTitle}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Today&apos;s Lesson</p>
+          <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{nextLesson.lessonTitle}</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
             {nextLesson.moduleLabel}: {nextLesson.moduleTitle}
           </p>
         </div>
         <Link
           href={`/learn/${nextLesson.moduleId}/${nextLesson.lessonId}`}
-          className="rounded-md bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700"
+          className="rounded-xl bg-teal-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-700"
         >
           Continue Course
         </Link>
@@ -100,11 +100,11 @@ export function NextLessonCard({ lessonProgress }: { lessonProgress: DashboardLe
         <ProgressBar value={nextLesson.progress} label="Lesson progress" tone="cyan" />
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        {lessonSteps.map(([lessonId, title]) => {
+        {lessonSteps.slice(0, 5).map(([lessonId, title]) => {
           const row = lessonProgress.find((item) => item.module_key === nextLesson.moduleId && item.lesson_key === lessonId);
           const done = row?.status === "completed" || Number(row?.progress_percent ?? 0) >= 100;
           return (
-            <div key={lessonId} className={`rounded-lg border p-3 text-sm ${done ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
+            <div key={lessonId} className={`rounded-2xl border p-3 text-sm ${done ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
               <span className="font-semibold">{title}</span>
               <span className="mt-1 block text-xs">{done ? "Complete" : "Ready"}</span>
             </div>

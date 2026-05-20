@@ -114,10 +114,10 @@ export function ChatMessage({ message, scrollAnchorRef }: ChatMessageProps) {
       <div
         className={`max-w-[min(44rem,88%)] rounded-2xl px-4 py-3 text-sm shadow-sm ${
           isStudent
-            ? "rounded-br-md bg-gradient-to-r from-cyan-600 to-blue-600 text-white"
+            ? "rounded-br-md bg-teal-600 text-white"
             : isSystem
               ? "rounded-bl-md bg-rose-50 text-rose-800"
-              : "rounded-bl-md bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white"
+              : "rounded-bl-md border border-teal-100 bg-white text-slate-700"
         }`}
       >
         <div className="space-y-3">

@@ -41,11 +41,11 @@ export function BuilderChatPanel({ studentId, projectId }: BuilderChatPanelProps
   }
 
   return (
-    <section className="flex min-h-[34rem] flex-col rounded-2xl border border-white/80 bg-white/90 shadow-sm">
+    <section className="flex min-h-[34rem] flex-col rounded-3xl border border-teal-100 bg-white shadow-sm">
       <div className="border-b border-slate-200 p-5">
-        <p className="text-sm font-semibold uppercase tracking-wide text-violet-700">Builder Mode</p>
-        <h2 className="mt-1 text-xl font-black text-slate-950">AI Project Mentor</h2>
-        <p className="mt-1 text-sm text-slate-500">Ask for debugging help, code review feedback, architecture suggestions, or build steps.</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Cyber Mentor</p>
+        <h2 className="mt-1 text-xl font-black text-slate-950">Ask about your project</h2>
+        <p className="mt-1 text-sm leading-6 text-slate-500">Get one small next step, debugging help, or feedback on your code.</p>
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
@@ -72,7 +72,7 @@ export function BuilderChatPanel({ studentId, projectId }: BuilderChatPanelProps
                     }),
                   );
                 }}
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left text-sm font-semibold text-slate-700 transition hover:border-violet-300 hover:text-violet-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {prompt}
               </button>
@@ -94,7 +94,7 @@ export function BuilderChatPanel({ studentId, projectId }: BuilderChatPanelProps
           onChange={(event) => setCodeSnippet(event.target.value)}
           placeholder="Optional code snippet for debugging or review"
           rows={3}
-          className="mb-3 w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 font-mono text-xs outline-none focus:border-violet-400"
+          className="mb-3 w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 font-mono text-xs outline-none focus:border-teal-400"
         />
         <div className="flex gap-2">
           <textarea
@@ -108,15 +108,15 @@ export function BuilderChatPanel({ studentId, projectId }: BuilderChatPanelProps
             }}
             placeholder={projectId ? "Ask your builder mentor..." : "Create or select a project first"}
             rows={2}
-            className="min-h-12 flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+            className="min-h-12 flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-teal-400"
           />
           <button
             type="button"
             onClick={() => void handleSend()}
             disabled={!studentId || !projectId || loading || (!message.trim() && !codeSnippet.trim())}
-            className="self-end rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="self-end rounded-2xl bg-teal-600 px-5 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Send
+            Ask
           </button>
         </div>
       </div>

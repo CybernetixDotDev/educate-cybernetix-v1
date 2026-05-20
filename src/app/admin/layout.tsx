@@ -12,7 +12,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950 lg:flex">
+    <div className="min-h-screen bg-[#f7faf9] text-slate-950 lg:flex">
       <AdminSidebar />
       <div className="min-w-0 flex-1">
         <AdminTopBar />

@@ -91,15 +91,15 @@ export function AuthForm() {
   }
 
   return (
-    <div className="rounded-3xl border border-white/80 bg-white/95 p-6 shadow-xl">
-      <div className="grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
+    <div className="rounded-3xl border border-teal-100 bg-white p-6 shadow-xl">
+      <div className="grid grid-cols-2 rounded-2xl bg-teal-50 p-1">
         {(["signin", "signup"] as const).map((item) => (
           <button
             key={item}
             type="button"
             onClick={() => setMode(item)}
             className={`rounded-xl px-4 py-2 text-sm font-black transition ${
-              mode === item ? "bg-slate-950 text-white shadow-sm" : "text-slate-600 hover:text-slate-950"
+              mode === item ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-950"
             }`}
           >
             {item === "signin" ? "Sign in" : "Sign up"}
@@ -111,9 +111,9 @@ export function AuthForm() {
         type="button"
         onClick={() => void signInWithGoogle()}
         disabled={loading}
-        className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-900 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-900 shadow-sm transition hover:border-teal-200 hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-100 text-xs font-black text-cyan-700">G</span>
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-100 text-xs font-black text-teal-700">G</span>
         Continue with Google
       </button>
 
@@ -131,7 +131,7 @@ export function AuthForm() {
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
               autoComplete="name"
-              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-950 outline-none focus:border-cyan-400"
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-950 outline-none focus:border-teal-400"
               placeholder="Alex Cyber"
             />
           </label>
@@ -145,7 +145,7 @@ export function AuthForm() {
             type="email"
             required
             autoComplete="email"
-            className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-950 outline-none focus:border-cyan-400"
+            className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-950 outline-none focus:border-teal-400"
             placeholder="student@example.com"
           />
         </label>
@@ -159,25 +159,25 @@ export function AuthForm() {
             required
             minLength={6}
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
-            className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-950 outline-none focus:border-cyan-400"
+            className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-950 outline-none focus:border-teal-400"
             placeholder="At least 6 characters"
           />
         </label>
 
         {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
-        {message && <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-800">{message}</div>}
+        {message && <div className="rounded-2xl border border-teal-200 bg-teal-50 p-3 text-sm text-teal-800">{message}</div>}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-2xl bg-teal-600 px-4 py-3 text-sm font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Working..." : mode === "signup" ? "Create account" : "Sign in"}
         </button>
       </form>
 
       <p className="mt-5 text-center text-sm text-slate-500">
-        <Link href="/" className="font-bold text-cyan-700 hover:text-cyan-900">
+        <Link href="/" className="font-bold text-teal-700 hover:text-teal-900">
           Back to home
         </Link>
       </p>

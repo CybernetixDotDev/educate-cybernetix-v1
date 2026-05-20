@@ -51,10 +51,11 @@ export function TaskGeneratorPanel({
   }
 
   return (
-    <section className="rounded-2xl border border-white/80 bg-white/90 p-5 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div>
-        <h2 className="text-xl font-black text-slate-950">AI Task Generator</h2>
-        <p className="mt-1 text-sm text-slate-500">Generate, refine, preview, then save tasks into your project board.</p>
+        <p className="text-sm font-bold uppercase tracking-wide text-teal-700">Cyber Mentor Planning</p>
+        <h2 className="mt-1 text-2xl font-black text-slate-950">Create the next build steps</h2>
+        <p className="mt-1 text-sm text-slate-500">Preview the plan, make changes, then save it to your mission board.</p>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
@@ -62,30 +63,30 @@ export function TaskGeneratorPanel({
           type="button"
           onClick={() => void onGenerate()}
           disabled={disabled || loading}
-          className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Generating..." : "Generate Tasks"}
+          {loading ? "Thinking..." : "Create Step Plan"}
         </button>
         <button
           type="button"
           onClick={() => void onRegenerateSelected()}
           disabled={disabled || loading}
-          className="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-teal-200 px-4 py-2 text-sm font-bold text-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Regenerate Selected Task
+          Improve Selected Step
         </button>
         <button
           type="button"
           onClick={() => void onSave()}
           disabled={!suggestions || loading}
-          className="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Save AI Tasks
+          Save Steps
         </button>
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <p className="text-sm font-black text-slate-900">Add Task Manually</p>
+        <p className="text-sm font-black text-slate-900">Add your own step</p>
         <div className="mt-3 grid gap-3">
           <input
             value={manualTask.title}
@@ -119,19 +120,19 @@ export function TaskGeneratorPanel({
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
             />
           </div>
-          <button type="button" onClick={addManualTask} className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white">
-            Add Task
+          <button type="button" onClick={addManualTask} className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white">
+            Add Step
           </button>
         </div>
       </div>
 
       {suggestions && (
         <div className="mt-6 space-y-3">
-          <p className="text-sm font-black text-slate-900">AI Suggestions Preview</p>
+          <p className="text-sm font-black text-slate-900">Suggested steps</p>
           {suggestions.tasks.map((task, index) => (
             <article key={task.task_id} className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="flex items-start gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-sm font-black text-cyan-700">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-black text-teal-700">
                   {index + 1}
                 </span>
                 <div className="min-w-0 flex-1 space-y-3">

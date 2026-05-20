@@ -263,12 +263,15 @@ async function AdminHomeContent() {
 
   return (
     <AdminDashboardLayout>
-      <header className="rounded-lg bg-slate-950 p-6 text-white shadow-sm sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Admin Control Center</p>
-        <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Welcome, {data.adminName}</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+      <header className="rounded-3xl border border-teal-100 bg-white p-7 text-slate-950 shadow-sm sm:p-10">
+        <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Admin Studio</p>
+        <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Welcome, {data.adminName}</h1>
+        <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
           Manage curriculum, roles, families, AI systems, reporting, and platform activity from one operational view.
         </p>
+        <div className="mt-5 inline-flex rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-bold text-teal-900">
+          You are here: Admin studio &rarr; Next step: Choose an operation
+        </div>
       </header>
 
       <PlatformOverviewCards overview={data.overview} />
@@ -295,12 +298,12 @@ async function AdminHomeContent() {
 function Fallback() {
   return (
     <AdminDashboardLayout>
-      <div className="h-44 animate-pulse rounded-lg bg-white shadow-sm" />
+      <div className="h-44 animate-pulse rounded-3xl bg-white shadow-sm" />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="h-32 animate-pulse rounded-lg bg-white shadow-sm" />
-        <div className="h-32 animate-pulse rounded-lg bg-white shadow-sm" />
-        <div className="h-32 animate-pulse rounded-lg bg-white shadow-sm" />
-        <div className="h-32 animate-pulse rounded-lg bg-white shadow-sm" />
+        <div className="h-32 animate-pulse rounded-3xl bg-white shadow-sm" />
+        <div className="h-32 animate-pulse rounded-3xl bg-white shadow-sm" />
+        <div className="h-32 animate-pulse rounded-3xl bg-white shadow-sm" />
+        <div className="h-32 animate-pulse rounded-3xl bg-white shadow-sm" />
       </div>
     </AdminDashboardLayout>
   );

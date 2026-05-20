@@ -80,19 +80,20 @@ export function TaskList({ tasks, onRefresh, onSelectTask, selectedTaskId }: Tas
 
   if (tasks.length === 0) {
     return (
-      <section className="rounded-2xl border border-dashed border-cyan-300 bg-white/85 p-6 text-center shadow-sm">
+      <section className="rounded-3xl border border-dashed border-teal-300 bg-white p-6 text-center shadow-sm">
         <p className="text-sm font-bold text-slate-950">No tasks yet</p>
-        <p className="mt-2 text-sm text-slate-600">Generate a builder task list or add your first task manually.</p>
+        <p className="mt-2 text-sm text-slate-600">Ask Cyber Mentor to turn your idea into a few tiny build steps.</p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-white/80 bg-white/90 p-5 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black text-slate-950">Build Tasks</h2>
-          <p className="text-sm text-slate-500">Keep each task small enough to finish in one focused session.</p>
+          <p className="text-sm font-bold uppercase tracking-wide text-teal-700">Mission Board</p>
+          <h2 className="mt-1 text-2xl font-black text-slate-950">Tiny build steps</h2>
+          <p className="mt-1 text-sm text-slate-500">Keep each task small enough to finish in one focused session.</p>
         </div>
       </div>
 
@@ -107,7 +108,7 @@ export function TaskList({ tasks, onRefresh, onSelectTask, selectedTaskId }: Tas
             <article
               key={task.id}
               className={`rounded-2xl border p-4 transition ${
-                selected ? "border-cyan-400 bg-cyan-50/80" : "border-slate-200 bg-white"
+                selected ? "border-teal-400 bg-teal-50" : "border-slate-200 bg-white"
               }`}
             >
               {isEditing ? (
@@ -163,7 +164,7 @@ export function TaskList({ tasks, onRefresh, onSelectTask, selectedTaskId }: Tas
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">{difficulty(task)}</span>
                     {skills(task).map((skill) => (
-                      <span key={skill} className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">
+                      <span key={skill} className="rounded-full bg-teal-100 px-3 py-1 text-xs font-bold text-teal-800">
                         {skill}
                       </span>
                     ))}
@@ -175,7 +176,7 @@ export function TaskList({ tasks, onRefresh, onSelectTask, selectedTaskId }: Tas
                     <button
                       type="button"
                       onClick={() => void updateTask(task, { status: "completed", completed_at: new Date().toISOString() })}
-                      className="rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white"
+                      className="rounded-xl bg-teal-600 px-3 py-2 text-xs font-bold text-white"
                     >
                       Mark Complete
                     </button>

@@ -117,27 +117,32 @@ export default async function LearnPage({ searchParams }: LearnPageProps) {
   const selectedModules = modules.filter((module) => module.course_id === selectedCourse.id || (usingFallback && selectedCourse.id === FALLBACK_COURSE.id));
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="rounded-lg bg-slate-950 p-6 text-white shadow-sm sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Learning Hub</p>
-          <h1 className="mt-3 text-3xl font-bold sm:text-4xl">Choose a course, then continue the next module.</h1>
-          <p className="mt-3 max-w-2xl text-slate-300">
-            12-Week Tech-Foundations Accelerator is the first course. New teen courses can be added here without changing the learning workflow.
+    <main className="min-h-screen bg-[#f7faf9] px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-8">
+        <header className="rounded-3xl border border-teal-100 bg-white p-7 shadow-sm sm:p-10">
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">My Course</p>
+          <h1 className="mt-3 max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
+            Choose your path, then build something real.
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+            Start with the 12-Week Tech-Foundations Accelerator. Each week gives you a theme, short lessons, a hero project, and a showcase moment.
           </p>
+          <div className="mt-6 inline-flex rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-bold text-teal-900">
+            You are here: Course library &rarr; Next step: Open Week 1
+          </div>
         </header>
 
-        <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Courses</p>
-            <h2 className="mt-1 text-xl font-black text-slate-950">Course Library</h2>
+        <section className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Courses</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-950">Pick one focus</h2>
             <div className="mt-5 space-y-3">
               {courses.map((course) => (
                 <Link
                   key={course.id}
                   href={`/learn?course=${course.course_key}`}
-                  className={`block rounded-lg border p-4 transition hover:border-cyan-200 hover:bg-cyan-50 ${
-                    course.id === selectedCourse.id ? "border-cyan-300 bg-cyan-50" : "border-slate-200 bg-slate-50"
+                  className={`block rounded-2xl border p-5 transition hover:border-teal-200 hover:bg-teal-50 ${
+                    course.id === selectedCourse.id ? "border-teal-300 bg-teal-50" : "border-slate-200 bg-slate-50"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -145,16 +150,16 @@ export default async function LearnPage({ searchParams }: LearnPageProps) {
                     <span className="rounded-full bg-white px-2 py-1 text-xs font-bold text-slate-600">{course.duration_weeks ?? "Flexible"} weeks</span>
                   </div>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{course.description ?? "Course details coming soon."}</p>
-                  <p className="mt-3 text-xs font-bold uppercase tracking-wide text-cyan-700">{course.category}</p>
+                  <p className="mt-3 text-xs font-bold uppercase tracking-wide text-teal-700">{course.category}</p>
                 </Link>
               ))}
             </div>
           </div>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">{selectedCourse.title}</p>
-              <h2 className="mt-1 text-xl font-black text-slate-950">Modules</h2>
+              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">{selectedCourse.title}</p>
+              <h2 className="mt-1 text-2xl font-black text-slate-950">Weekly missions</h2>
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               {selectedModules.map((module) => {
@@ -164,14 +169,14 @@ export default async function LearnPage({ searchParams }: LearnPageProps) {
                   <Link
                     key={module.id}
                     href={`/learn/${moduleKey}/${firstLessonKey}`}
-                    className="rounded-lg border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:shadow-md"
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:bg-teal-50 hover:shadow-md"
                   >
-                    <p className="text-sm font-bold uppercase tracking-wide text-cyan-600">
+                    <p className="text-sm font-bold uppercase tracking-wide text-teal-700">
                       {module.week_number ? `Week ${module.week_number}` : `Module ${module.order_index}`}
                     </p>
                     <h3 className="mt-2 text-lg font-black text-slate-950">{module.title}</h3>
                     <p className="mt-3 text-sm leading-6 text-slate-600">{module.description ?? "Start or resume lessons for this module."}</p>
-                    <p className="mt-5 text-sm font-black text-cyan-700">Open module</p>
+                    <p className="mt-5 text-sm font-black text-teal-700">Start this mission</p>
                   </Link>
                 );
               })}

@@ -51,12 +51,12 @@ export function RecommendedActions({
   ];
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">Next Steps</p>
-      <h2 className="mt-1 text-xl font-black text-slate-950">Do these in order</h2>
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Next Steps</p>
+      <h2 className="mt-1 text-2xl font-black text-slate-950">Do these in order</h2>
       <div className="mt-5 space-y-3">
         {actions.map((action, index) => (
-          <Link key={action.title} href={action.href} className="block rounded-lg border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-200 hover:bg-cyan-50">
+          <Link key={action.title} href={action.href} className="block rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-teal-200 hover:bg-teal-50">
             <p className="text-sm font-black text-slate-950">{index + 1}. {action.title}</p>
             <p className="mt-1 text-sm leading-6 text-slate-600">{action.body}</p>
           </Link>

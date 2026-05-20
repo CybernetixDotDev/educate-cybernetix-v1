@@ -24,23 +24,23 @@ export function ProjectOverview({ project, tasks, loading = false }: ProjectOver
   const updatedAt = project?.updated_at ? new Date(project.updated_at).toLocaleString() : "Not started yet";
 
   if (loading) {
-    return <section className="h-64 animate-pulse rounded-2xl bg-white/80" />;
+    return <section className="h-64 animate-pulse rounded-3xl bg-white" />;
   }
 
   return (
-    <section className="rounded-2xl border border-white/80 bg-white/90 p-6 shadow-sm">
+    <section className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-700">Project Mentor</p>
-          <h1 className="mt-1 text-3xl font-black text-slate-950">{project?.title ?? "No active project yet"}</h1>
+          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Mission Snapshot</p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{project?.title ?? "No active project yet"}</h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-            {project?.description ?? "Start a project from your dashboard to unlock builder guidance, task planning, and code review support."}
+            {project?.description ?? "Start with a small project idea. Cyber Mentor will help turn it into a simple build plan."}
           </p>
         </div>
-        <div className="rounded-2xl bg-slate-950 px-5 py-4 text-white">
-          <p className="text-sm text-cyan-200">Progress</p>
+        <div className="rounded-2xl bg-emerald-50 px-5 py-4 text-emerald-950">
+          <p className="text-sm font-bold text-emerald-800">Progress</p>
           <p className="text-3xl font-black">{progress}%</p>
-          <p className="text-xs text-slate-300">{completedTasks} of {tasks.length} tasks done</p>
+          <p className="text-xs text-emerald-800">{completedTasks} of {tasks.length} tasks done</p>
         </div>
       </div>
 
@@ -53,7 +53,7 @@ export function ProjectOverview({ project, tasks, loading = false }: ProjectOver
           <p className="text-sm font-bold text-slate-900">Last updated</p>
           <p className="mt-2 text-sm text-slate-600">{updatedAt}</p>
           <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
-            <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-violet-600" style={{ width: `${progress}%` }} />
+            <div className="h-full rounded-full bg-emerald-500" style={{ width: `${progress}%` }} />
           </div>
         </div>
       </div>

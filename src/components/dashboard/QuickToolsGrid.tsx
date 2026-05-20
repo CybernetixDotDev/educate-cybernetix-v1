@@ -33,11 +33,11 @@ const SECONDARY_ACTIONS = [
 
 export function QuickToolsGrid() {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">How today works</p>
-          <h2 className="mt-1 text-xl font-semibold text-slate-950">Learn, build, ask when stuck</h2>
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">How today works</p>
+          <h2 className="mt-1 text-2xl font-black text-slate-950">Learn, build, ask when stuck</h2>
         </div>
         <p className="max-w-xl text-sm leading-6 text-slate-600">
           Cyber Mentor is one assistant behind the scenes. You do not need to choose a separate debugging, review, or presentation tool.
@@ -49,12 +49,12 @@ export function QuickToolsGrid() {
           <Link
             key={action.href}
             href={action.href}
-            className="group rounded-lg border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:shadow-sm"
+            className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:border-teal-200 hover:bg-teal-50 hover:shadow-sm"
           >
-            <span className="text-xs font-black uppercase tracking-wide text-cyan-700">{action.eyebrow}</span>
+            <span className="text-xs font-black uppercase tracking-wide text-teal-700">{action.eyebrow}</span>
             <h3 className="mt-2 text-lg font-black text-slate-950">{action.title}</h3>
             <p className="mt-2 min-h-16 text-sm leading-6 text-slate-600">{action.description}</p>
-            <span className="mt-4 inline-flex text-sm font-black text-cyan-700 group-hover:text-cyan-900">{action.cta}</span>
+            <span className="mt-4 inline-flex text-sm font-black text-teal-700 group-hover:text-teal-900">{action.cta}</span>
           </Link>
         ))}
       </div>
