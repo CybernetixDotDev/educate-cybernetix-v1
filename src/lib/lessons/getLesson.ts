@@ -22,6 +22,39 @@ export type LessonVideo = {
   transcript?: string;
 };
 
+export type LessonCheckpointType = "screenshot" | "file" | "link" | "text";
+
+export type LessonTask = {
+  task_id: string;
+  title: string;
+  instruction: string;
+  video_url?: string;
+  action: string;
+  checkpoint_type: LessonCheckpointType;
+  ai_verification_criteria: string[];
+};
+
+export type LessonFinalSubmission = {
+  required_task_checkpoints: string[];
+  final_project_upload: {
+    required: boolean;
+    prompt: string;
+    accepted_formats: LessonCheckpointType[];
+  };
+  micro_survey: Array<{
+    question_id: string;
+    question: string;
+    type: "yes_no" | "text";
+  }>;
+  ai_mentor_final_review: {
+    reviews_all_submissions: boolean;
+    gives_feedback: boolean;
+    awards_completion: boolean;
+    unlocks_next_co_op: boolean;
+    review_prompt: string;
+  };
+};
+
 export type LessonSection = {
   heading: string;
   body: string;
@@ -44,6 +77,8 @@ export type Lesson = {
   codeExamples: LessonCodeExample[];
   images: LessonImage[];
   videos: LessonVideo[];
+  tasks: LessonTask[];
+  finalSubmission: LessonFinalSubmission | null;
   quiz: LessonQuizMetadata;
 };
 
@@ -83,9 +118,12 @@ type LessonVersionJson = {
   title: string;
   description?: string;
   section?: string;
+  estimated_minutes?: number;
   video?: ContentBlock | null;
   objectives?: string[];
   content?: ContentBlock[];
+  tasks?: LessonTask[];
+  final_submission?: LessonFinalSubmission;
   quiz?: QuizVersionJson;
 };
 
@@ -322,6 +360,8 @@ function buildLesson(moduleId: string, lessonId: string): Lesson {
     ],
     images: [],
     videos: [],
+    tasks: [],
+    finalSubmission: null,
     quiz: {
       quiz_key: `${moduleId}-${lessonId}`,
       title: `${lessonLabel} Quiz`,
@@ -368,9 +408,120 @@ function blockText(block: ContentBlock) {
   return block.value ?? block.url ?? "";
 }
 
+const CHECKPOINT_TYPES = new Set<LessonCheckpointType>(["screenshot", "file", "link", "text"]);
+
+function normalizeCheckpointType(value: unknown): LessonCheckpointType {
+  return typeof value === "string" && CHECKPOINT_TYPES.has(value as LessonCheckpointType) ? value as LessonCheckpointType : "text";
+}
+
+function normalizeTasks(value: unknown): LessonTask[] {
+  if (!Array.isArray(value)) return [];
+
+  const tasks: LessonTask[] = [];
+
+  value.forEach((task, index) => {
+      if (typeof task !== "object" || task === null || Array.isArray(task)) return null;
+      const record = task as Record<string, unknown>;
+      const title = typeof record.title === "string" ? record.title : `Task ${index + 1}`;
+      const taskId = typeof record.task_id === "string" ? record.task_id : `task-${index + 1}`;
+      const criteria = Array.isArray(record.ai_verification_criteria)
+        ? record.ai_verification_criteria.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+        : [];
+      const videoUrl = typeof record.video_url === "string" && record.video_url.trim() ? record.video_url : undefined;
+
+      tasks.push({
+        task_id: taskId,
+        title,
+        instruction: typeof record.instruction === "string" ? record.instruction : "",
+        ...(videoUrl ? { video_url: videoUrl } : {}),
+        action: typeof record.action === "string" ? record.action : "",
+        checkpoint_type: normalizeCheckpointType(record.checkpoint_type),
+        ai_verification_criteria: criteria,
+      });
+    });
+
+  return tasks;
+}
+
+function normalizeFinalSubmission(value: unknown, tasks: LessonTask[]): LessonFinalSubmission | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    if (tasks.length === 0) return null;
+
+    return {
+      required_task_checkpoints: tasks.map((task) => task.task_id),
+      final_project_upload: {
+        required: true,
+        prompt: "Share the finished project or a screenshot of your work.",
+        accepted_formats: ["screenshot", "link", "text"],
+      },
+      micro_survey: [
+        { question_id: "continue", question: "Do you want to continue?", type: "yes_no" },
+        { question_id: "most_interesting", question: "What was the most interesting thing you learned?", type: "text" },
+      ],
+      ai_mentor_final_review: {
+        reviews_all_submissions: true,
+        gives_feedback: true,
+        awards_completion: true,
+        unlocks_next_co_op: true,
+        review_prompt: "Review all checkpoint submissions and give supportive next-step feedback.",
+      },
+    };
+  }
+
+  const record = value as Record<string, unknown>;
+  const upload = typeof record.final_project_upload === "object" && record.final_project_upload !== null && !Array.isArray(record.final_project_upload)
+    ? record.final_project_upload as Record<string, unknown>
+    : {};
+  const review = typeof record.ai_mentor_final_review === "object" && record.ai_mentor_final_review !== null && !Array.isArray(record.ai_mentor_final_review)
+    ? record.ai_mentor_final_review as Record<string, unknown>
+    : {};
+  const rawSurvey = Array.isArray(record.micro_survey) ? record.micro_survey : [];
+  const microSurvey = rawSurvey
+    .map((question, index) => {
+      if (typeof question !== "object" || question === null || Array.isArray(question)) return null;
+      const item = question as Record<string, unknown>;
+      return {
+        question_id: typeof item.question_id === "string" ? item.question_id : `question-${index + 1}`,
+        question: typeof item.question === "string" ? item.question : "",
+        type: item.type === "yes_no" ? "yes_no" as const : "text" as const,
+      };
+    })
+    .filter((question): question is LessonFinalSubmission["micro_survey"][number] => Boolean(question?.question));
+
+  return {
+    required_task_checkpoints: Array.isArray(record.required_task_checkpoints)
+      ? record.required_task_checkpoints.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      : tasks.map((task) => task.task_id),
+    final_project_upload: {
+      required: typeof upload.required === "boolean" ? upload.required : true,
+      prompt: typeof upload.prompt === "string" ? upload.prompt : "Share the finished project or a screenshot of your work.",
+      accepted_formats: Array.isArray(upload.accepted_formats)
+        ? upload.accepted_formats.map(normalizeCheckpointType)
+        : ["screenshot", "link", "text"],
+    },
+    micro_survey: microSurvey.length > 0
+      ? microSurvey
+      : [
+          { question_id: "continue", question: "Do you want to continue?", type: "yes_no" },
+          { question_id: "most_interesting", question: "What was the most interesting thing you learned?", type: "text" },
+        ],
+    ai_mentor_final_review: {
+      reviews_all_submissions: typeof review.reviews_all_submissions === "boolean" ? review.reviews_all_submissions : true,
+      gives_feedback: typeof review.gives_feedback === "boolean" ? review.gives_feedback : true,
+      awards_completion: typeof review.awards_completion === "boolean" ? review.awards_completion : true,
+      unlocks_next_co_op: typeof review.unlocks_next_co_op === "boolean" ? review.unlocks_next_co_op : true,
+      review_prompt: typeof review.review_prompt === "string"
+        ? review.review_prompt
+        : "Review all checkpoint submissions and give supportive next-step feedback.",
+    },
+  };
+}
+
 function transformLesson(moduleId: string, lessonId: string, lessonJson: LessonVersionJson, quizJson: QuizVersionJson | null): Lesson {
   const content = lessonJson.content ?? [];
   const objectives = lessonJson.objectives ?? [];
+  const tasks = normalizeTasks(lessonJson.tasks);
+  const finalSubmission = normalizeFinalSubmission(lessonJson.final_submission, tasks);
   const body: LessonSection[] = [
     ...(objectives.length > 0
       ? [{
@@ -437,6 +588,8 @@ function transformLesson(moduleId: string, lessonId: string, lessonJson: LessonV
     codeExamples,
     images,
     videos,
+    tasks,
+    finalSubmission,
     quiz: {
       quiz_key: quizSource.id ?? `${moduleId}-${lessonId}`,
       title: `${lessonJson.title} Quiz`,

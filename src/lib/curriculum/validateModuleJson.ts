@@ -2,7 +2,9 @@ import {
   CURRICULUM_BLOCK_TYPES,
   validateLessonJson,
   type CurriculumContentBlock,
+  type CurriculumFinalSubmission,
   type CurriculumLessonJson,
+  type CurriculumLessonTask,
   type CurriculumQuizJson,
 } from "@/lib/curriculum/validateLessonJson";
 
@@ -27,6 +29,18 @@ export type AuthorModuleQuestion = {
   explanation?: string;
 };
 
+export type AuthorModuleTask = {
+  task_id?: string;
+  title: string;
+  instruction: string;
+  video_url: string;
+  action: string;
+  checkpoint_type?: "screenshot" | "file" | "link" | "text";
+  ai_verification_criteria: string[];
+};
+
+export type AuthorModuleFinalSubmission = CurriculumFinalSubmission;
+
 export type AuthorModuleLesson = {
   id: string;
   module_id: string;
@@ -38,6 +52,8 @@ export type AuthorModuleLesson = {
   skills?: string[];
   video?: AuthorModuleBlock | null;
   blocks: AuthorModuleBlock[];
+  tasks?: AuthorModuleTask[];
+  final_submission?: AuthorModuleFinalSubmission;
   quiz?: {
     questions: AuthorModuleQuestion[];
   };
@@ -134,6 +150,65 @@ function normalizeQuestion(question: AuthorModuleQuestion) {
   };
 }
 
+function checkpointType(value: unknown): CurriculumLessonTask["checkpoint_type"] {
+  return value === "file" || value === "link" || value === "text" || value === "screenshot" ? value : "screenshot";
+}
+
+function normalizeTask(rawTask: AuthorModuleTask, lessonId: string, index: number): CurriculumLessonTask {
+  return {
+    task_id: nonEmptyString(rawTask.task_id) ? String(rawTask.task_id) : `${lessonId}-t${index + 1}`,
+    title: String(rawTask.title ?? `Task ${index + 1}`),
+    instruction: String(rawTask.instruction ?? ""),
+    video_url: String(rawTask.video_url ?? ""),
+    action: String(rawTask.action ?? ""),
+    checkpoint_type: checkpointType(rawTask.checkpoint_type),
+    ai_verification_criteria: Array.isArray(rawTask.ai_verification_criteria) ? rawTask.ai_verification_criteria.map(String).filter(Boolean) : [],
+  };
+}
+
+function taskFromBlock(block: CurriculumContentBlock, lessonId: string, index: number): CurriculumLessonTask {
+  return {
+    task_id: `${lessonId}-t${index + 1}`,
+    title: block.title ?? `Task ${index + 1}`,
+    instruction: block.value ?? block.url ?? "",
+    video_url: "",
+    action: block.value ?? block.url ?? "",
+    checkpoint_type: "screenshot",
+    ai_verification_criteria: ["Submission shows the requested task was attempted.", "Submission matches the lesson objective."],
+  };
+}
+
+function defaultFinalSubmission(tasks: CurriculumLessonTask[], projectOutcome: unknown): CurriculumFinalSubmission {
+  return {
+    required_task_checkpoints: tasks.map((task) => task.task_id),
+    final_project_upload: {
+      required: true,
+      prompt: `Upload or link your final project${nonEmptyString(projectOutcome) ? `: ${String(projectOutcome)}` : "."}`,
+      accepted_formats: ["screenshot", "file", "link"],
+    },
+    micro_survey: [
+      {
+        question_id: "continue",
+        question: "Do you want to continue?",
+        type: "yes_no",
+      },
+      {
+        question_id: "most_interesting",
+        question: "What was the most interesting thing you learned?",
+        type: "text",
+      },
+    ],
+    ai_mentor_final_review: {
+      reviews_all_submissions: true,
+      gives_feedback: true,
+      awards_completion: true,
+      unlocks_next_co_op: true,
+      review_prompt:
+        "Review every task checkpoint, the final project upload, and the micro-survey. Give supportive feedback, award completion only when the criteria are met, then unlock the next co-op.",
+    },
+  };
+}
+
 export function validateModuleJson(value: unknown): ModuleValidationResult {
   const errors: string[] = [];
 
@@ -193,6 +268,18 @@ export function validateModuleJson(value: unknown): ModuleValidationResult {
         id: `${lessonId}-quiz`,
         questions: rawQuestions.map((question) => normalizeQuestion(question as AuthorModuleQuestion)),
       };
+      const explicitTasks = Array.isArray(rawLesson.tasks)
+        ? rawLesson.tasks.map((task, taskIndex) => normalizeTask(task as AuthorModuleTask, lessonId, taskIndex))
+        : [];
+      if (explicitTasks.length < 5 || explicitTasks.length > 7) {
+        errors.push(`lessons[${lessonIndex}].tasks must include 5 to 7 explicit co-op tasks.`);
+      }
+      const fallbackTasks = explicitTasks.length > 0
+        ? explicitTasks
+        : blocks.filter((block) => block.type === "task").map((block, taskIndex) => taskFromBlock(block, lessonId, taskIndex));
+      const finalSubmission = isRecord(rawLesson.final_submission)
+        ? rawLesson.final_submission as CurriculumFinalSubmission
+        : defaultFinalSubmission(fallbackTasks, rawLesson.title);
       const lesson: CurriculumLessonJson = {
         id: lessonId,
         module_id: nonEmptyString(rawLesson.module_id) ? String(rawLesson.module_id) : String(value.module_id ?? ""),
@@ -204,6 +291,8 @@ export function validateModuleJson(value: unknown): ModuleValidationResult {
         video: isRecord(rawLesson.video) ? normalizeBlock(rawLesson.video as AuthorModuleBlock) : null,
         objectives: [`Complete ${String(rawLesson.title ?? "this lesson")}`, "Apply the concept in a small task"],
         content: blocks,
+        tasks: fallbackTasks,
+        final_submission: finalSubmission,
         quiz,
       };
       const lessonValidation = validateLessonJson(lesson);

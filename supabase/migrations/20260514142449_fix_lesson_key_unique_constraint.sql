@@ -1,5 +1,3 @@
-drop index if exists public.lessons_module_lesson_key_unique;
-
 update public.lessons
 set lesson_key = coalesce(
   nullif(lesson_key, ''),

@@ -2,31 +2,48 @@ import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { AILessonGeneratorClient } from "./AILessonGeneratorClient";
+import type { LessonBlueprintSummary, LessonBrief } from "@/lib/lesson-studio/types";
 
-type ModuleRow = {
-  module_key: string;
-  module_title: string;
+type BlueprintRow = {
+  id: string;
+  title: string;
+  status: string;
+  updated_at: string | null;
+  brief_json: LessonBrief;
 };
 
 async function AILessonGeneratorContent() {
   const supabase = createClient(await cookies());
-  const { data } = await supabase.from("ai_module_context").select("module_key,module_title").order("module_key");
-  const modules = ((data ?? []) as ModuleRow[]).map((module) => ({
-    module_id: module.module_key,
-    title: module.module_title,
-  }));
+  const { data, error } = await supabase
+    .from("lesson_blueprints")
+    .select("id,title,status,updated_at,brief_json")
+    .order("updated_at", { ascending: false })
+    .limit(20);
+
+  const blueprints: LessonBlueprintSummary[] = error
+    ? []
+    : ((data ?? []) as BlueprintRow[]).map((blueprint) => ({
+        id: blueprint.id,
+        title: blueprint.title,
+        status: blueprint.status,
+        updated_at: blueprint.updated_at,
+        brief: blueprint.brief_json,
+      }));
 
   return (
     <main className="p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="mx-auto max-w-7xl space-y-8">
         <header>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-600">AI Authoring</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-950">AI-Assisted Lesson Generator</h1>
-          <p className="mt-2 text-slate-600">
-            Generate lesson content, quizzes, metadata, skill tags, and difficulty using the platform mentor context.
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-teal-700">AI Lesson Studio</p>
+          <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            Turn a clear brief into a complete teaching package.
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
+            Create reusable lesson blueprints for the curriculum team, then generate consistent StarterSchool-style lessons with
+            a hook, teaching steps, video script, quiz, project checklist, and transcript.
           </p>
         </header>
-        <AILessonGeneratorClient modules={modules} />
+        <AILessonGeneratorClient blueprints={blueprints} />
       </div>
     </main>
   );

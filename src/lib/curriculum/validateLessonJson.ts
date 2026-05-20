@@ -36,6 +36,44 @@ export type CurriculumQuizJson = {
   questions: CurriculumQuizQuestion[];
 };
 
+export type CurriculumLessonTask = {
+  task_id: string;
+  title: string;
+  instruction: string;
+  video_url: string;
+  action: string;
+  checkpoint_type: "screenshot" | "file" | "link" | "text";
+  ai_verification_criteria: string[];
+};
+
+export type CurriculumFinalSubmission = {
+  required_task_checkpoints: string[];
+  final_project_upload: {
+    required: boolean;
+    prompt: string;
+    accepted_formats: Array<"screenshot" | "file" | "link" | "text">;
+  };
+  micro_survey: [
+    {
+      question_id: "continue";
+      question: "Do you want to continue?";
+      type: "yes_no";
+    },
+    {
+      question_id: "most_interesting";
+      question: "What was the most interesting thing you learned?";
+      type: "text";
+    },
+  ];
+  ai_mentor_final_review: {
+    reviews_all_submissions: boolean;
+    gives_feedback: boolean;
+    awards_completion: boolean;
+    unlocks_next_co_op: boolean;
+    review_prompt: string;
+  };
+};
+
 export type CurriculumLessonJson = {
   id: string;
   module_id?: string;
@@ -47,6 +85,8 @@ export type CurriculumLessonJson = {
   video?: CurriculumContentBlock | null;
   objectives: string[];
   content: CurriculumContentBlock[];
+  tasks: CurriculumLessonTask[];
+  final_submission: CurriculumFinalSubmission;
   quiz: CurriculumQuizJson;
 };
 
@@ -157,6 +197,148 @@ function validateQuestions(value: unknown, path: string, errors: string[]) {
   });
 }
 
+function validateLessonTasks(value: unknown, path: string, errors: string[]) {
+  if (!Array.isArray(value)) {
+    errors.push(`${path} must contain 5 to 7 co-op tasks.`);
+    return;
+  }
+
+  if (value.length < 5 || value.length > 7) {
+    errors.push(`${path} must contain 5 to 7 co-op tasks.`);
+  }
+
+  const checkpointTypes = new Set(["screenshot", "file", "link", "text"]);
+  const taskIds = new Set<string>();
+
+  value.forEach((task, index) => {
+    if (!isRecord(task)) {
+      errors.push(`${path}[${index}] must be an object.`);
+      return;
+    }
+
+    validateString(task.task_id, `${path}[${index}].task_id`, errors);
+    validateString(task.title, `${path}[${index}].title`, errors);
+    validateString(task.instruction, `${path}[${index}].instruction`, errors);
+    validateString(task.video_url, `${path}[${index}].video_url`, errors);
+    validateString(task.action, `${path}[${index}].action`, errors);
+    validateStringArray(task.ai_verification_criteria, `${path}[${index}].ai_verification_criteria`, errors);
+    if (Array.isArray(task.ai_verification_criteria) && task.ai_verification_criteria.length === 0) {
+      errors.push(`${path}[${index}].ai_verification_criteria must include at least one measurable criterion.`);
+    }
+
+    if (typeof task.task_id === "string") {
+      if (taskIds.has(task.task_id)) errors.push(`${path}[${index}].task_id must be unique.`);
+      taskIds.add(task.task_id);
+    }
+
+    if (typeof task.checkpoint_type !== "string" || !checkpointTypes.has(task.checkpoint_type)) {
+      errors.push(`${path}[${index}].checkpoint_type must be one of screenshot, file, link, text.`);
+    }
+  });
+}
+
+function validateBoolean(value: unknown, path: string, errors: string[]) {
+  if (typeof value !== "boolean") {
+    errors.push(`${path} must be a boolean.`);
+  }
+}
+
+function validateAcceptedFormats(value: unknown, path: string, errors: string[]) {
+  if (!Array.isArray(value) || value.length === 0) {
+    errors.push(`${path} must contain at least one accepted format.`);
+    return;
+  }
+
+  const formats = new Set(["screenshot", "file", "link", "text"]);
+  value.forEach((format, index) => {
+    if (typeof format !== "string" || !formats.has(format)) {
+      errors.push(`${path}[${index}] must be one of screenshot, file, link, text.`);
+    }
+  });
+}
+
+function validateFinalSubmission(value: unknown, taskIds: string[], path: string, errors: string[]) {
+  if (!isRecord(value)) {
+    errors.push(`${path} must be an object.`);
+    return;
+  }
+
+  validateStringArray(value.required_task_checkpoints, `${path}.required_task_checkpoints`, errors);
+  if (Array.isArray(value.required_task_checkpoints)) {
+    const checkpoints = new Set(value.required_task_checkpoints.filter((item): item is string => typeof item === "string"));
+    if (checkpoints.size < 5 || checkpoints.size > 7) {
+      errors.push(`${path}.required_task_checkpoints must include all 5 to 7 task checkpoint IDs.`);
+    }
+    taskIds.forEach((taskId) => {
+      if (!checkpoints.has(taskId)) {
+        errors.push(`${path}.required_task_checkpoints must include task checkpoint ${taskId}.`);
+      }
+    });
+    checkpoints.forEach((taskId) => {
+      if (!taskIds.includes(taskId)) {
+        errors.push(`${path}.required_task_checkpoints includes unknown task checkpoint ${taskId}.`);
+      }
+    });
+  }
+
+  if (!isRecord(value.final_project_upload)) {
+    errors.push(`${path}.final_project_upload must be an object.`);
+  } else {
+    validateBoolean(value.final_project_upload.required, `${path}.final_project_upload.required`, errors);
+    validateString(value.final_project_upload.prompt, `${path}.final_project_upload.prompt`, errors);
+    validateAcceptedFormats(value.final_project_upload.accepted_formats, `${path}.final_project_upload.accepted_formats`, errors);
+  }
+
+  if (!Array.isArray(value.micro_survey) || value.micro_survey.length !== 2) {
+    errors.push(`${path}.micro_survey must contain exactly two questions.`);
+  } else {
+    const [continueQuestion, interestingQuestion] = value.micro_survey;
+    if (!isRecord(continueQuestion)) {
+      errors.push(`${path}.micro_survey[0] must be an object.`);
+    } else {
+      if (continueQuestion.question_id !== "continue") errors.push(`${path}.micro_survey[0].question_id must be continue.`);
+      if (continueQuestion.question !== "Do you want to continue?") {
+        errors.push(`${path}.micro_survey[0].question must be "Do you want to continue?".`);
+      }
+      if (continueQuestion.type !== "yes_no") errors.push(`${path}.micro_survey[0].type must be yes_no.`);
+    }
+
+    if (!isRecord(interestingQuestion)) {
+      errors.push(`${path}.micro_survey[1] must be an object.`);
+    } else {
+      if (interestingQuestion.question_id !== "most_interesting") {
+        errors.push(`${path}.micro_survey[1].question_id must be most_interesting.`);
+      }
+      if (interestingQuestion.question !== "What was the most interesting thing you learned?") {
+        errors.push(`${path}.micro_survey[1].question must be "What was the most interesting thing you learned?".`);
+      }
+      if (interestingQuestion.type !== "text") errors.push(`${path}.micro_survey[1].type must be text.`);
+    }
+  }
+
+  if (!isRecord(value.ai_mentor_final_review)) {
+    errors.push(`${path}.ai_mentor_final_review must be an object.`);
+  } else {
+    validateBoolean(value.ai_mentor_final_review.reviews_all_submissions, `${path}.ai_mentor_final_review.reviews_all_submissions`, errors);
+    validateBoolean(value.ai_mentor_final_review.gives_feedback, `${path}.ai_mentor_final_review.gives_feedback`, errors);
+    validateBoolean(value.ai_mentor_final_review.awards_completion, `${path}.ai_mentor_final_review.awards_completion`, errors);
+    validateBoolean(value.ai_mentor_final_review.unlocks_next_co_op, `${path}.ai_mentor_final_review.unlocks_next_co_op`, errors);
+    validateString(value.ai_mentor_final_review.review_prompt, `${path}.ai_mentor_final_review.review_prompt`, errors);
+    if (value.ai_mentor_final_review.reviews_all_submissions !== true) {
+      errors.push(`${path}.ai_mentor_final_review.reviews_all_submissions must be true.`);
+    }
+    if (value.ai_mentor_final_review.gives_feedback !== true) {
+      errors.push(`${path}.ai_mentor_final_review.gives_feedback must be true.`);
+    }
+    if (value.ai_mentor_final_review.awards_completion !== true) {
+      errors.push(`${path}.ai_mentor_final_review.awards_completion must be true.`);
+    }
+    if (value.ai_mentor_final_review.unlocks_next_co_op !== true) {
+      errors.push(`${path}.ai_mentor_final_review.unlocks_next_co_op must be true.`);
+    }
+  }
+}
+
 export function validateQuizJson(value: unknown): ValidationResult<CurriculumQuizJson> {
   const errors: string[] = [];
 
@@ -199,6 +381,12 @@ export function validateLessonJson(value: unknown): ValidationResult<CurriculumL
   } else {
     value.content.forEach((block, index) => validateContentBlock(block, `content[${index}]`, errors));
   }
+
+  validateLessonTasks(value.tasks, "tasks", errors);
+  const taskIds = Array.isArray(value.tasks)
+    ? value.tasks.filter(isRecord).map((task) => task.task_id).filter((taskId): taskId is string => typeof taskId === "string")
+    : [];
+  validateFinalSubmission(value.final_submission, taskIds, "final_submission", errors);
 
   if (!isRecord(value.quiz)) {
     errors.push("quiz must be an object.");

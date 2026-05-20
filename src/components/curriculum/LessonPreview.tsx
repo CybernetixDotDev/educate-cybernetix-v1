@@ -46,6 +46,43 @@ export function LessonPreview({ lesson, quiz }: LessonPreviewProps) {
               </article>
             ))}
           </div>
+          <div className="mt-6 rounded-lg bg-teal-50 p-4">
+            <h3 className="text-sm font-semibold text-teal-950">Tasks</h3>
+            <div className="mt-3 space-y-3">
+              {lesson.tasks.map((task, index) => (
+                <article key={task.task_id} className="rounded-lg border border-teal-100 bg-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-teal-700">{task.task_id}</p>
+                  <h4 className="mt-1 font-semibold text-slate-950">{index + 1}. {task.title}</h4>
+                  <p className="mt-2 text-sm leading-6 text-slate-700">{task.instruction}</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-700">Action: {task.action}</p>
+                  <p className="mt-1 text-xs text-slate-500">Checkpoint: {task.checkpoint_type}</p>
+                  {task.video_url && (
+                    <a href={task.video_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-sm font-bold text-teal-700 hover:text-teal-900">
+                      Open task video
+                    </a>
+                  )}
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="mt-6 rounded-lg bg-slate-950 p-4 text-white">
+            <h3 className="text-sm font-semibold text-teal-100">Final Submission</h3>
+            <p className="mt-2 text-sm text-slate-200">
+              Required checkpoints: {lesson.final_submission.required_task_checkpoints.join(", ")}
+            </p>
+            <p className="mt-2 text-sm text-slate-200">
+              Final project: {lesson.final_submission.final_project_upload.prompt}
+            </p>
+            <div className="mt-3 rounded-lg bg-white/10 p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-teal-100">Micro-survey</p>
+              <ul className="mt-2 space-y-1 text-sm text-slate-200">
+                {lesson.final_submission.micro_survey.map((question) => (
+                  <li key={question.question_id}>{question.question}</li>
+                ))}
+              </ul>
+            </div>
+            <p className="mt-3 text-sm text-slate-200">{lesson.final_submission.ai_mentor_final_review.review_prompt}</p>
+          </div>
         </div>
       )}
 

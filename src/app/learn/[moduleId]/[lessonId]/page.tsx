@@ -1,5 +1,6 @@
 "use client";
 
+import { CoOpLessonExperience } from "@/components/learning/CoOpLessonExperience";
 import { LessonContent } from "@/components/learning/LessonContent";
 import { MentorInlinePanel } from "@/components/learning/MentorInlinePanel";
 import { useLessonProgress } from "@/hooks/useLessonProgress";
@@ -27,6 +28,7 @@ export default function LessonPage() {
   } = useLessonProgress({ studentId: student?.id ?? null, moduleId });
   const activeLessonId = lesson?.lessonId ?? lessonId;
   const navigation = useMemo(() => getLessonNavigation(moduleId, activeLessonId), [activeLessonId, moduleId]);
+  const nextHref = navigation.next ? `/learn/${navigation.next.moduleId}/${navigation.next.lessonId}` : null;
   const currentProgress = progress.find((item) => item.module_key === moduleId && item.lesson_key === activeLessonId);
   const isComplete = currentProgress?.status === "completed" || (currentProgress?.progress_percent ?? 0) >= 100;
 
@@ -130,43 +132,47 @@ export default function LessonPage() {
           <div className="space-y-6">
             <LessonContent lesson={lesson} />
 
-            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-bold uppercase tracking-wide text-teal-700">Next step</p>
-              <h2 className="mt-1 text-2xl font-black text-slate-950">Ready to check your understanding?</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Take the checkpoint when you feel ready. If anything feels fuzzy, ask Cyber Mentor first.
-              </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <Link href={`/learn/${moduleId}/${activeLessonId}/quiz`} className="rounded-xl bg-teal-600 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-teal-700">
-                  Start Checkpoint
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => void handleMarkComplete()}
-                  disabled={!student || markingComplete || isComplete}
-                  className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                >
-                  {isComplete ? "Marked Complete" : markingComplete ? "Saving..." : "Mark Complete"}
-                </button>
-                {navigation.next ? (
+            {lesson.tasks.length > 0 ? (
+              <CoOpLessonExperience lesson={lesson} nextHref={nextHref} nextLabel={navigation.next?.label ?? null} />
+            ) : (
+              <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p className="text-sm font-bold uppercase tracking-wide text-teal-700">Next step</p>
+                <h2 className="mt-1 text-2xl font-black text-slate-950">Ready to check your understanding?</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Take the checkpoint when you feel ready. If anything feels fuzzy, ask Cyber Mentor first.
+                </p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <Link href={`/learn/${moduleId}/${activeLessonId}/quiz`} className="rounded-xl bg-teal-600 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-teal-700">
+                    Start Checkpoint
+                  </Link>
                   <button
                     type="button"
-                    onClick={() => router.push(`/learn/${navigation.next?.moduleId}/${navigation.next?.lessonId}`)}
-                    className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+                    onClick={() => void handleMarkComplete()}
+                    disabled={!student || markingComplete || isComplete}
+                    className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                   >
-                    {navigation.next.isNextModule ? "Proceed to Next Module" : "Next Lesson"}
+                    {isComplete ? "Marked Complete" : markingComplete ? "Saving..." : "Mark Complete"}
                   </button>
-                ) : (
-                  <Link
-                    href="/dashboard"
-                    className="rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-slate-800"
-                  >
-                    Finish Course
-                  </Link>
-                )}
-              </div>
-              {navigation.next && <p className="mt-3 text-sm text-slate-500">{navigation.next.label}</p>}
-            </section>
+                  {navigation.next ? (
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/learn/${navigation.next?.moduleId}/${navigation.next?.lessonId}`)}
+                      className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+                    >
+                      {navigation.next.isNextModule ? "Proceed to Next Module" : "Next Lesson"}
+                    </button>
+                  ) : (
+                    <Link
+                      href="/dashboard"
+                      className="rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-slate-800"
+                    >
+                      Finish Course
+                    </Link>
+                  )}
+                </div>
+                {navigation.next && <p className="mt-3 text-sm text-slate-500">{navigation.next.label}</p>}
+              </section>
+            )}
           </div>
 
           <MentorInlinePanel studentId={student?.id ?? null} moduleId={moduleId} lessonId={activeLessonId} />
