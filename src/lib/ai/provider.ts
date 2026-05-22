@@ -27,6 +27,19 @@ function endpoint() {
   return process.env.AI_PROVIDER_URL ?? "https://api.openai.com/v1/chat/completions";
 }
 
+function numberEnv(name: string, fallback: number) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function defaultTimeoutMs(json: boolean) {
+  if (json) {
+    return numberEnv("AI_PROVIDER_JSON_TIMEOUT_MS", numberEnv("AI_PROVIDER_TIMEOUT_MS", 120_000));
+  }
+
+  return numberEnv("AI_PROVIDER_TEXT_TIMEOUT_MS", numberEnv("AI_PROVIDER_TIMEOUT_MS", 60_000));
+}
+
 function logLLM(event: string, metadata: Record<string, unknown>) {
   if (process.env.AI_PROVIDER_LOGS === "silent") return;
   console.info(`[ai-provider] ${event}`, metadata);
@@ -60,7 +73,7 @@ async function callChatCompletion(modelInput: string, promptInput: CompilePrompt
   const prompt = await compilePrompt(promptInput);
   const model = modelInput || (await getModel(options.purpose ?? (options.json ? "json" : "text")));
   const retries = options.retries ?? (options.json ? 1 : 0);
-  const timeoutMs = options.timeoutMs ?? 45_000;
+  const timeoutMs = options.timeoutMs ?? defaultTimeoutMs(options.json);
   const startedAt = Date.now();
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -220,4 +233,3 @@ export async function* callStreamingLLM(
     reader.releaseLock();
   }
 }
-

@@ -24,8 +24,8 @@ const NAV_ITEMS = [
 
 export function AdminSidebar() {
   return (
-    <aside className="border-b border-teal-100 bg-white/95 p-4 backdrop-blur lg:sticky lg:top-0 lg:h-screen lg:w-72 lg:border-b-0 lg:border-r">
-      <div className="flex items-center justify-between gap-3 lg:block">
+    <aside className="border-b border-teal-100 bg-white/95 p-4 backdrop-blur lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:flex-col lg:border-b-0 lg:border-r">
+      <div className="flex shrink-0 items-center justify-between gap-3 lg:block">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Educate Cybernetix</p>
           <h1 className="mt-1 text-2xl font-black text-slate-950">Admin Studio</h1>
@@ -34,7 +34,7 @@ export function AdminSidebar() {
           Dashboard
         </Link>
       </div>
-      <nav className="mt-6 flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
+      <nav className="mt-6 flex gap-2 overflow-x-auto pb-2 lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:pb-4 lg:pr-1">
         {NAV_ITEMS.map((item) => (
           <Link
             key={item.href}
@@ -45,11 +45,11 @@ export function AdminSidebar() {
           </Link>
         ))}
       </nav>
-      <Link href="/admin" className="mt-8 hidden text-sm font-semibold text-slate-500 hover:text-teal-700 lg:block">
-        Return to Dashboard
-      </Link>
-      <div className="mt-4 hidden border-t border-slate-200 pt-4 lg:block">
-        <SignOutButton className="w-full rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" />
+      <div className="hidden shrink-0 border-t border-slate-200 pt-4 lg:block">
+        <Link href="/admin" className="block text-sm font-semibold text-slate-500 hover:text-teal-700">
+          Return to Dashboard
+        </Link>
+        <SignOutButton className="mt-4 w-full rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" />
       </div>
       <div className="mt-4 lg:hidden">
         <SignOutButton className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" />
