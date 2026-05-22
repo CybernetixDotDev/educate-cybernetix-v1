@@ -85,7 +85,7 @@ export function LessonPackagePreview({ lesson }: LessonPackagePreviewProps) {
                 </div>
                 <div className="rounded-2xl bg-slate-50 p-3">
                   <p className="font-semibold text-slate-900">Checkpoint</p>
-                  <p className="mt-1">{task.checkpoint_type}</p>
+                  <p className="mt-1">{(task.checkpoint_types?.length ? task.checkpoint_types : [task.checkpoint_type]).join(", ")}</p>
                   {task.video_url && <p className="mt-1 break-all text-xs text-slate-500">{task.video_url}</p>}
                 </div>
                 <div className="rounded-2xl bg-slate-50 p-3">
@@ -104,7 +104,7 @@ export function LessonPackagePreview({ lesson }: LessonPackagePreviewProps) {
 
       {lesson.co_op_tasks.length > 0 && (
         <div className="rounded-3xl bg-slate-50 p-5">
-          <h3 className="font-semibold text-slate-950">Co-Op task support layer</h3>
+          <h3 className="font-semibold text-slate-950">Guided build task support layer</h3>
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             {lesson.co_op_tasks.map((task, index) => (
               <article key={`${task.title}-${index}`} className="rounded-2xl border border-slate-200 bg-white p-4">

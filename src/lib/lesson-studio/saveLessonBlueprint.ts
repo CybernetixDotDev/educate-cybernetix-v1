@@ -21,16 +21,23 @@ function cleanList(values: string[] = []) {
 
 function cleanCheckpointTypes(values: CheckpointType[] = []) {
   const allowed = new Set<CheckpointType>(["screenshot", "file", "link", "text"]);
-  return values.filter((value): value is CheckpointType => allowed.has(value));
+  return values.filter((value, index): value is CheckpointType => allowed.has(value) && values.indexOf(value) === index);
+}
+
+function taskCheckpointTypes(task: HandsOnTaskRequirement) {
+  return cleanCheckpointTypes(task.checkpoint_types?.length ? task.checkpoint_types : [task.checkpoint_type]);
 }
 
 function cleanTask(task: HandsOnTaskRequirement): HandsOnTaskRequirement {
+  const checkpointTypes = taskCheckpointTypes(task);
+
   return {
     task_name: task.task_name.trim(),
     instruction: task.instruction.trim(),
     short_video_requirement: task.short_video_requirement.trim(),
     student_action: task.student_action.trim(),
-    checkpoint_type: task.checkpoint_type,
+    checkpoint_types: checkpointTypes.length > 0 ? checkpointTypes : ["screenshot"],
+    checkpoint_type: checkpointTypes[0] ?? "screenshot",
     ai_verification_criteria: cleanList(task.ai_verification_criteria),
     ai_mentor_guidance: task.ai_mentor_guidance.trim(),
     expected_output: task.expected_output.trim(),
@@ -55,6 +62,7 @@ function validateBrief(brief: LessonBrief) {
     if (!task.instruction.trim()) errors.push(`Task ${index + 1} needs an instruction.`);
     if (!task.short_video_requirement.trim()) errors.push(`Task ${index + 1} needs a short video requirement.`);
     if (!task.student_action.trim()) errors.push(`Task ${index + 1} needs a student action.`);
+    if (taskCheckpointTypes(task).length === 0) errors.push(`Task ${index + 1} needs at least one checkpoint type.`);
     if (cleanList(task.ai_verification_criteria).length === 0) errors.push(`Task ${index + 1} needs AI verification criteria.`);
     if (!task.ai_mentor_guidance.trim()) errors.push(`Task ${index + 1} needs AI Mentor guidance.`);
     if (!task.expected_output.trim()) errors.push(`Task ${index + 1} needs an expected output.`);

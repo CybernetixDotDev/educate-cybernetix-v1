@@ -25,6 +25,10 @@ function joinLines(values: string[]) {
   return values.join("\n");
 }
 
+function taskCheckpointTypes(task: HandsOnTaskRequirement) {
+  return task.checkpoint_types?.length ? task.checkpoint_types : [task.checkpoint_type];
+}
+
 export function LessonBriefForm({ value, blueprints, selectedBlueprintId, onSelectBlueprint, onChange }: LessonBriefFormProps) {
   function update<K extends keyof LessonBrief>(key: K, nextValue: LessonBrief[K]) {
     onChange({ ...value, [key]: nextValue });
@@ -46,6 +50,7 @@ export function LessonBriefForm({ value, blueprints, selectedBlueprintId, onSele
         instruction: "",
         short_video_requirement: "2-5 minute walkthrough video",
         student_action: "",
+        checkpoint_types: ["screenshot"],
         checkpoint_type: "screenshot",
         ai_verification_criteria: [],
         ai_mentor_guidance: "",
@@ -237,20 +242,33 @@ export function LessonBriefForm({ value, blueprints, selectedBlueprintId, onSele
                       placeholder="2-5 minute guided demo"
                     />
                   </label>
-                  <label className="text-sm font-medium text-slate-700">
-                    Checkpoint Type
-                    <select
-                      value={task.checkpoint_type}
-                      onChange={(event) => updateTask(index, { checkpoint_type: event.target.value as CheckpointType })}
-                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-500 focus:bg-white"
-                    >
-                      {checkpointTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <div className="text-sm font-medium text-slate-700">
+                    Checkpoint Types
+                    <div className="mt-2 grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                      {checkpointTypes.map((type) => {
+                        const selected = taskCheckpointTypes(task).includes(type);
+                        return (
+                          <label key={type} className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={(event) => {
+                                const current = taskCheckpointTypes(task);
+                                const next = event.target.checked
+                                  ? [...current, type]
+                                  : current.filter((item) => item !== type);
+                                const safeNext = next.length > 0 ? next : ["screenshot" as CheckpointType];
+                                updateTask(index, { checkpoint_types: safeNext, checkpoint_type: safeNext[0] });
+                              }}
+                              className="h-4 w-4 rounded border-slate-300 text-teal-600"
+                            />
+                            {type}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">Select every format this checkpoint can accept.</p>
+                  </div>
                   <label className="text-sm font-medium text-slate-700 lg:col-span-2">
                     Student Action
                     <textarea
@@ -292,7 +310,7 @@ export function LessonBriefForm({ value, blueprints, selectedBlueprintId, onSele
         <div className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-5 lg:col-span-2 lg:grid-cols-2">
           <div className="lg:col-span-2">
             <h3 className="font-semibold text-slate-950">Final Project Submission Requirements</h3>
-            <p className="mt-1 text-sm text-slate-600">Define the completion gate at the end of the lesson or co-op.</p>
+            <p className="mt-1 text-sm text-slate-600">Define the completion gate at the end of the lesson.</p>
           </div>
           <label className="text-sm font-medium text-slate-700">
             Required uploads

@@ -42,6 +42,7 @@ export type CurriculumLessonTask = {
   instruction: string;
   video_url: string;
   action: string;
+  checkpoint_types?: Array<"screenshot" | "file" | "link" | "text">;
   checkpoint_type: "screenshot" | "file" | "link" | "text";
   ai_verification_criteria: string[];
 };
@@ -199,12 +200,12 @@ function validateQuestions(value: unknown, path: string, errors: string[]) {
 
 function validateLessonTasks(value: unknown, path: string, errors: string[]) {
   if (!Array.isArray(value)) {
-    errors.push(`${path} must contain 5 to 7 co-op tasks.`);
+    errors.push(`${path} must contain 5 to 7 guided build tasks.`);
     return;
   }
 
   if (value.length < 5 || value.length > 7) {
-    errors.push(`${path} must contain 5 to 7 co-op tasks.`);
+    errors.push(`${path} must contain 5 to 7 guided build tasks.`);
   }
 
   const checkpointTypes = new Set(["screenshot", "file", "link", "text"]);
@@ -233,6 +234,14 @@ function validateLessonTasks(value: unknown, path: string, errors: string[]) {
 
     if (typeof task.checkpoint_type !== "string" || !checkpointTypes.has(task.checkpoint_type)) {
       errors.push(`${path}[${index}].checkpoint_type must be one of screenshot, file, link, text.`);
+    }
+    validateOptionalStringArray(task.checkpoint_types, `${path}[${index}].checkpoint_types`, errors);
+    if (Array.isArray(task.checkpoint_types)) {
+      task.checkpoint_types.forEach((checkpointType, checkpointIndex) => {
+        if (typeof checkpointType !== "string" || !checkpointTypes.has(checkpointType)) {
+          errors.push(`${path}[${index}].checkpoint_types[${checkpointIndex}] must be one of screenshot, file, link, text.`);
+        }
+      });
     }
   });
 }

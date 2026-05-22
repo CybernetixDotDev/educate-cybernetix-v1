@@ -1,6 +1,5 @@
 "use client";
 
-import { CoOpLessonExperience } from "@/components/learning/CoOpLessonExperience";
 import { LessonContent } from "@/components/learning/LessonContent";
 import { MentorInlinePanel } from "@/components/learning/MentorInlinePanel";
 import { useLessonProgress } from "@/hooks/useLessonProgress";
@@ -28,7 +27,6 @@ export default function LessonPage() {
   } = useLessonProgress({ studentId: student?.id ?? null, moduleId });
   const activeLessonId = lesson?.lessonId ?? lessonId;
   const navigation = useMemo(() => getLessonNavigation(moduleId, activeLessonId), [activeLessonId, moduleId]);
-  const nextHref = navigation.next ? `/learn/${navigation.next.moduleId}/${navigation.next.lessonId}` : null;
   const currentProgress = progress.find((item) => item.module_key === moduleId && item.lesson_key === activeLessonId);
   const isComplete = currentProgress?.status === "completed" || (currentProgress?.progress_percent ?? 0) >= 100;
 
@@ -133,7 +131,19 @@ export default function LessonPage() {
             <LessonContent lesson={lesson} />
 
             {lesson.tasks.length > 0 ? (
-              <CoOpLessonExperience lesson={lesson} nextHref={nextHref} nextLabel={navigation.next?.label ?? null} />
+              <section className="rounded-3xl border border-teal-100 bg-white p-6 shadow-sm">
+                <p className="text-sm font-bold uppercase tracking-wide text-teal-700">Next step</p>
+                <h2 className="mt-1 text-3xl font-black text-slate-950">Start the guided build task</h2>
+                <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
+                  This lesson has {lesson.tasks.length} focused task{lesson.tasks.length === 1 ? "" : "s"}. Each task opens on its own page so you can focus on one step at a time.
+                </p>
+                <Link
+                  href={`/learn/${lesson.moduleId}/${lesson.lessonId}/task/${lesson.tasks[0].task_id}`}
+                  className="mt-5 inline-flex rounded-full bg-teal-600 px-6 py-3 text-sm font-black text-white transition hover:bg-teal-700"
+                >
+                  Start Task 1
+                </Link>
+              </section>
             ) : (
               <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <p className="text-sm font-bold uppercase tracking-wide text-teal-700">Next step</p>

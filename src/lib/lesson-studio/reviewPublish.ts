@@ -37,10 +37,92 @@ function quizOptions(question: GeneratedQuizQuestion) {
   return question.options && question.options.length > 0 ? question.options : [quizAnswer(question)];
 }
 
+function fallbackQuizQuestions(lesson: LessonGeneratorOutput): GeneratedQuizQuestion[] {
+  const objectives = lesson.objective.length > 0 ? lesson.objective : [lesson.hook || lesson.build_task.expected_outcome || "the lesson goal"];
+  const projectOutcome = lesson.build_task.expected_outcome || lesson.build_task.title || "the project outcome";
+
+  return [
+    {
+      type: "mcq",
+      question: "What is the main goal of this lesson?",
+      options: [projectOutcome, "Only watch the video", "Skip the checkpoint", "Avoid building anything"],
+      answer: projectOutcome,
+      explanation: "The lesson is project-based, so the main goal is the visible project outcome.",
+      difficulty: "easy",
+      skill_tags: ["project-based-learning"],
+    },
+    {
+      type: "true_false",
+      question: `True or false: this lesson helps you ${objectives[0].toLowerCase().replace(/[.?!]$/g, "")}.`,
+      options: ["True", "False"],
+      answer: true,
+      explanation: `This is one of the lesson objectives: ${objectives[0]}`,
+      difficulty: "easy",
+      skill_tags: ["lesson-objective"],
+    },
+    {
+      type: "short",
+      question: "What should you submit to prove you completed the hands-on work?",
+      answer: lesson.tasks[0]?.title ?? "A checkpoint submission showing the task was completed.",
+      explanation: "A good answer describes the checkpoint proof the student will submit.",
+      difficulty: "easy",
+      skill_tags: ["checkpoint"],
+    },
+  ];
+}
+
+function sceneVideos(render?: LessonRender | null) {
+  return Array.isArray(render?.render_json?.scene_video_urls) ? render.render_json.scene_video_urls : [];
+}
+
+function isPlaceholderVideoUrl(url: string | undefined) {
+  return !url || /(^https?:\/\/example\.com\/|yourcdn\.com|placeholder)/i.test(url);
+}
+
+function hasSplitTaskVideos(render?: LessonRender | null) {
+  return sceneVideos(render).some((scene) => scene.kind === "task" && scene.url);
+}
+
+function introVideo(render?: LessonRender | null) {
+  if (render?.render_json?.intro_video_url) {
+    return {
+      title: "Cyber Mentor lesson intro",
+      url: render.render_json.intro_video_url,
+    };
+  }
+  return sceneVideos(render).find((scene) => scene.kind === "intro") ?? sceneVideos(render)[0] ?? null;
+}
+
+function taskVideoUrl(taskIndex: number, taskId: string, taskTitle: string, render?: LessonRender | null) {
+  const videos = sceneVideos(render).filter((scene) => scene.kind === "task");
+  const normalizedTitle = taskTitle.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const match = videos.find((scene) => scene.task_id === taskId)
+    ?? videos.find((scene) => scene.task_index === taskIndex)
+    ?? videos.find((scene) => normalizedTitle && scene.title.toLowerCase().includes(normalizedTitle));
+
+  return match?.url ?? "";
+}
+
+function lessonWalkthroughVideo(render?: LessonRender | null) {
+  return render?.render_json?.lesson_video_url
+    ? {
+        type: "video" as const,
+        title: "Cyber Mentor lesson walkthrough",
+        value: render.render_json.lesson_video_url,
+        url: render.render_json.lesson_video_url,
+        provider: "lesson-renderer",
+        thumbnail_url: render.thumbnail_url ?? undefined,
+        transcript: render.transcript_url ?? undefined,
+      }
+    : null;
+}
+
 function toCurriculumQuiz(lessonKey: string, lesson: LessonGeneratorOutput): CurriculumQuizJson {
+  const questions = lesson.quiz.questions.length > 0 ? lesson.quiz.questions : fallbackQuizQuestions(lesson);
+
   return {
     id: `${lessonKey}-quiz`,
-    questions: lesson.quiz.questions.map((question) => ({
+    questions: questions.map((question) => ({
       question: question.question,
       options: quizOptions(question),
       answer: quizAnswer(question),
@@ -50,8 +132,9 @@ function toCurriculumQuiz(lessonKey: string, lesson: LessonGeneratorOutput): Cur
 }
 
 function toCurriculumLesson(target: PublishTarget, lesson: LessonGeneratorOutput, render?: LessonRender | null): CurriculumLessonJson {
-  const content = lesson.lesson_blocks.length > 0
-    ? lesson.lesson_blocks
+  const generatedBlocks = lesson.lesson_blocks.filter((block) => Boolean(block.value?.trim() || block.url?.trim()));
+  const content = generatedBlocks.length > 0
+    ? generatedBlocks
     : [
         { type: "learning_goal" as const, value: lesson.objective.join("\n") },
         { type: "text" as const, title: "Hook", value: lesson.hook },
@@ -59,28 +142,38 @@ function toCurriculumLesson(target: PublishTarget, lesson: LessonGeneratorOutput
         { type: "task" as const, title: lesson.build_task.title ?? "Build Task", value: lesson.build_task.instructions?.join("\n") ?? lesson.build_task.expected_outcome ?? "" },
         { type: "recap" as const, value: lesson.recap },
       ];
-  const video = render?.mp4_url
+  const intro = introVideo(render);
+  const video = intro?.url
     ? {
         type: "video" as const,
-        title: "Cyber Mentor lesson video",
-        value: render.mp4_url,
-        url: render.mp4_url,
+        title: intro.title || "Cyber Mentor lesson intro",
+        value: intro.url,
+        url: intro.url,
         provider: "lesson-renderer",
-        thumbnail_url: render.thumbnail_url ?? undefined,
-        transcript: render.transcript_url ?? lesson.transcript,
+        thumbnail_url: render?.thumbnail_url ?? undefined,
+        transcript: render?.transcript_url ?? lesson.transcript,
       }
     : undefined;
+  const lessonVideoBlock = lessonWalkthroughVideo(render);
+  const curriculumContent = lessonVideoBlock ? [lessonVideoBlock, ...content] : content;
+  const tasks = lesson.tasks.map((task, index) => {
+    const renderedTaskVideoUrl = taskVideoUrl(index, task.task_id, task.title, render);
+    return {
+      ...task,
+      video_url: renderedTaskVideoUrl || (isPlaceholderVideoUrl(task.video_url) ? "" : task.video_url),
+    };
+  });
 
   return {
     id: target.lesson_key,
     module_id: target.module_key,
-    title: lesson.build_task.title || target.lesson_key,
+    title: target.lesson_title || lesson.build_task.title || target.lesson_key,
     description: lesson.hook,
     estimated_minutes: Math.max(10, Math.round(lesson.tasks.length * 8)),
     objectives: lesson.objective,
     ...(video ? { video } : {}),
-    content,
-    tasks: lesson.tasks,
+    content: curriculumContent,
+    tasks,
     final_submission: lesson.final_submission,
     quiz: toCurriculumQuiz(target.lesson_key, lesson),
   };
@@ -114,6 +207,22 @@ async function auditReview(
     note,
     created_by: userResult.user?.id ?? null,
   });
+}
+
+async function resolveCourseId(supabase: ReturnType<typeof createClient>, courseKey: string) {
+  const { data, error } = await supabase
+    .from("courses")
+    .select("id")
+    .eq("course_key", courseKey)
+    .maybeSingle();
+
+  if (error) return null;
+  return typeof data?.id === "string" ? data.id : null;
+}
+
+function weekNumberFromModuleKey(moduleKey: string) {
+  const match = moduleKey.match(/^week(\d+)/);
+  return match ? Number(match[1]) : null;
 }
 
 export async function saveReviewEdits(
@@ -190,6 +299,7 @@ export async function publishReviewedLesson(
 
   const normalizedTarget = {
     ...target,
+    course_key: slug(target.course_key || "12-week-tech-foundations-accelerator"),
     module_key: slug(target.module_key),
     lesson_key: slug(target.lesson_key),
     lesson_order_index: Math.max(1, Math.round(target.lesson_order_index || 1)),
@@ -197,6 +307,18 @@ export async function publishReviewedLesson(
 
   if (!normalizedTarget.module_key || !normalizedTarget.lesson_key) {
     return { ok: false, data: null, error: "Module key and lesson key are required." };
+  }
+
+  if (render && render.status !== "completed") {
+    return { ok: false, data: null, error: "Wait for the MP4 render to complete before publishing this lesson." };
+  }
+
+  if (render && !render.render_json?.intro_video_url) {
+    return { ok: false, data: null, error: "This render is missing the separate intro MP4. Prepare a new MP4 render before publishing." };
+  }
+
+  if (render && lesson.tasks.length > 0 && !hasSplitTaskVideos(render)) {
+    return { ok: false, data: null, error: "This render is missing separate task videos. Prepare a new MP4 render before publishing." };
   }
 
   const curriculumLesson = toCurriculumLesson(normalizedTarget, lesson, render);
@@ -212,18 +334,23 @@ export async function publishReviewedLesson(
 
   const supabase = createClient(await cookies());
   const { data: userResult } = await supabase.auth.getUser();
+  const courseId = await resolveCourseId(supabase, normalizedTarget.course_key);
+  const weekNumber = weekNumberFromModuleKey(normalizedTarget.module_key);
 
   const { data: moduleRow, error: moduleError } = await supabase
     .from("modules")
     .upsert(
       {
+        ...(courseId ? { course_id: courseId } : {}),
         module_key: normalizedTarget.module_key,
         title: normalizedTarget.module_title,
         description: normalizedTarget.module_description,
-        order_index: 0,
+        order_index: weekNumber ?? 0,
+        ...(weekNumber ? { week_number: weekNumber } : {}),
         is_published: true,
         metadata: {
           source: "lesson_studio_publish",
+          course_key: normalizedTarget.course_key,
           generated_lesson_id: lesson.generated_lesson_id ?? null,
           storyboard_id: storyboard?.storyboard_id ?? null,
         },
@@ -303,7 +430,23 @@ export async function publishReviewedLesson(
 
   if (quizUpdateError) return { ok: false, data: null, error: quizUpdateError.message };
 
-  await setLessonReviewStatus(lesson, storyboard, "published", `Published to ${normalizedTarget.module_key}/${normalizedTarget.lesson_key}`);
+  if (lesson.generated_lesson_id) {
+    const { error } = await supabase
+      .from("generated_lessons")
+      .update({ status: "published", updated_at: new Date().toISOString() })
+      .eq("id", lesson.generated_lesson_id);
+    if (error) return { ok: false, data: null, error: error.message };
+  }
+
+  if (storyboard?.storyboard_id) {
+    const { error } = await supabase
+      .from("lesson_storyboards")
+      .update({ status: "published", updated_at: new Date().toISOString() })
+      .eq("id", storyboard.storyboard_id);
+    if (error) return { ok: false, data: null, error: error.message };
+  }
+
+  await auditReview(supabase, "published", lesson.generated_lesson_id, storyboard?.storyboard_id, `Published to ${normalizedTarget.module_key}/${normalizedTarget.lesson_key}`);
 
   revalidatePath("/admin/ai-lesson-generator");
   revalidatePath("/admin/curriculum");

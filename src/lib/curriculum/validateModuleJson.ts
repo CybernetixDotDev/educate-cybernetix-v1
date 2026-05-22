@@ -35,6 +35,7 @@ export type AuthorModuleTask = {
   instruction: string;
   video_url: string;
   action: string;
+  checkpoint_types?: Array<"screenshot" | "file" | "link" | "text">;
   checkpoint_type?: "screenshot" | "file" | "link" | "text";
   ai_verification_criteria: string[];
 };
@@ -154,6 +155,15 @@ function checkpointType(value: unknown): CurriculumLessonTask["checkpoint_type"]
   return value === "file" || value === "link" || value === "text" || value === "screenshot" ? value : "screenshot";
 }
 
+function checkpointTypes(value: unknown, fallback: CurriculumLessonTask["checkpoint_type"]) {
+  const allowed = new Set(["screenshot", "file", "link", "text"]);
+  const values = Array.isArray(value)
+    ? value.filter((item): item is CurriculumLessonTask["checkpoint_type"] => typeof item === "string" && allowed.has(item))
+    : [];
+
+  return values.length > 0 ? Array.from(new Set(values)) : [fallback];
+}
+
 function normalizeTask(rawTask: AuthorModuleTask, lessonId: string, index: number): CurriculumLessonTask {
   return {
     task_id: nonEmptyString(rawTask.task_id) ? String(rawTask.task_id) : `${lessonId}-t${index + 1}`,
@@ -161,7 +171,8 @@ function normalizeTask(rawTask: AuthorModuleTask, lessonId: string, index: numbe
     instruction: String(rawTask.instruction ?? ""),
     video_url: String(rawTask.video_url ?? ""),
     action: String(rawTask.action ?? ""),
-    checkpoint_type: checkpointType(rawTask.checkpoint_type),
+    checkpoint_types: checkpointTypes(rawTask.checkpoint_types, checkpointType(rawTask.checkpoint_type)),
+    checkpoint_type: checkpointTypes(rawTask.checkpoint_types, checkpointType(rawTask.checkpoint_type))[0] ?? "screenshot",
     ai_verification_criteria: Array.isArray(rawTask.ai_verification_criteria) ? rawTask.ai_verification_criteria.map(String).filter(Boolean) : [],
   };
 }
@@ -173,6 +184,7 @@ function taskFromBlock(block: CurriculumContentBlock, lessonId: string, index: n
     instruction: block.value ?? block.url ?? "",
     video_url: "",
     action: block.value ?? block.url ?? "",
+    checkpoint_types: ["screenshot"],
     checkpoint_type: "screenshot",
     ai_verification_criteria: ["Submission shows the requested task was attempted.", "Submission matches the lesson objective."],
   };
@@ -204,7 +216,7 @@ function defaultFinalSubmission(tasks: CurriculumLessonTask[], projectOutcome: u
       awards_completion: true,
       unlocks_next_co_op: true,
       review_prompt:
-        "Review every task checkpoint, the final project upload, and the micro-survey. Give supportive feedback, award completion only when the criteria are met, then unlock the next co-op.",
+        "Review every task checkpoint, the final project upload, and the micro-survey. Give supportive feedback, award completion only when the criteria are met, then unlock the next guided build.",
     },
   };
 }
@@ -272,7 +284,7 @@ export function validateModuleJson(value: unknown): ModuleValidationResult {
         ? rawLesson.tasks.map((task, taskIndex) => normalizeTask(task as AuthorModuleTask, lessonId, taskIndex))
         : [];
       if (explicitTasks.length < 5 || explicitTasks.length > 7) {
-        errors.push(`lessons[${lessonIndex}].tasks must include 5 to 7 explicit co-op tasks.`);
+        errors.push(`lessons[${lessonIndex}].tasks must include 5 to 7 explicit guided build tasks.`);
       }
       const fallbackTasks = explicitTasks.length > 0
         ? explicitTasks

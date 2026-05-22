@@ -30,6 +30,7 @@ export type LessonTask = {
   instruction: string;
   video_url?: string;
   action: string;
+  checkpoint_types?: LessonCheckpointType[];
   checkpoint_type: LessonCheckpointType;
   ai_verification_criteria: string[];
 };
@@ -73,6 +74,7 @@ export type Lesson = {
   lessonId: string;
   title: string;
   summary: string;
+  objectives: string[];
   body: LessonSection[];
   codeExamples: LessonCodeExample[];
   images: LessonImage[];
@@ -144,14 +146,22 @@ type LessonRow = {
   title: string;
   order_index: number;
   current_version_id: string | null;
-  lesson_versions?: Array<{ id: string; content_json: LessonVersionJson }>;
   modules?: { module_key: string | null; title: string | null } | Array<{ module_key: string | null; title: string | null }> | null;
 };
 
 type QuizRow = {
   id: string;
   current_version_id: string | null;
-  quiz_versions?: Array<{ id: string; content_json: QuizVersionJson }>;
+};
+
+type LessonVersionRow = {
+  id: string;
+  content_json: LessonVersionJson;
+};
+
+type QuizVersionRow = {
+  id: string;
+  content_json: QuizVersionJson;
 };
 
 const MODULE_ORDER = [
@@ -173,16 +183,16 @@ const LESSON_ORDER = ["intro", "practice", "checkpoint"] as const;
 
 const IMPORTED_LESSON_ORDER: Record<string, Array<{ lessonId: string; title: string }>> = {
   "week1-internet-html-css": [
-    { lessonId: "w1l1", title: "How the Internet Works" },
-    { lessonId: "w1l2", title: "HTML Structure" },
-    { lessonId: "w1l3", title: "CSS Basics" },
-    { lessonId: "w1l4", title: "Box Model & Layout" },
-    { lessonId: "w1l5", title: "Responsive Design" },
+    { lessonId: "w1d1", title: "How the Internet Works" },
+    { lessonId: "w1d2", title: "HTML Structure" },
+    { lessonId: "w1d3", title: "CSS Basics" },
+    { lessonId: "w1d4", title: "Box Model & Layout" },
+    { lessonId: "w1d5", title: "Responsive Design" },
   ],
 };
 
 const IMPORTED_FIRST_LESSON: Record<string, string> = {
-  "week1-internet-html-css": "w1l1",
+  "week1-internet-html-css": "w1d1",
 };
 
 const WEEK1_AUTHORED_LESSONS: Record<string, LessonVersionJson> = {
@@ -320,8 +330,8 @@ export function getCanonicalLessonId(moduleId: string, lessonId: string) {
     return IMPORTED_FIRST_LESSON[moduleId] ?? lessonId;
   }
 
-  if (moduleId === "week1-internet-html-css" && /^w1d\d+$/.test(lessonId)) {
-    return lessonId.replace("w1d", "w1l");
+  if (moduleId === "week1-internet-html-css" && /^w1l\d+$/.test(lessonId)) {
+    return lessonId.replace("w1l", "w1d");
   }
 
   return lessonId;
@@ -337,6 +347,7 @@ function buildLesson(moduleId: string, lessonId: string): Lesson {
     lessonId,
     title: `${moduleTitle}: ${lessonLabel}`,
     summary: `Learn the core ${moduleTitle.toLowerCase()} idea, practice it, then check your understanding with a short quiz.`,
+    objectives: [],
     body: [
       {
         heading: "What you are learning",
@@ -408,10 +419,34 @@ function blockText(block: ContentBlock) {
   return block.value ?? block.url ?? "";
 }
 
+function sectionLabelFor(block: ContentBlock, index: number) {
+  const knownLabel = SECTION_LABELS[block.type];
+
+  if (knownLabel) {
+    return {
+      heading: block.title ?? (block.type === "text" && index === 0 ? "Lesson" : knownLabel.heading),
+      tone: knownLabel.tone,
+    };
+  }
+
+  return {
+    heading: block.title ?? "Lesson",
+    tone: "default" as const,
+  };
+}
+
 const CHECKPOINT_TYPES = new Set<LessonCheckpointType>(["screenshot", "file", "link", "text"]);
 
 function normalizeCheckpointType(value: unknown): LessonCheckpointType {
   return typeof value === "string" && CHECKPOINT_TYPES.has(value as LessonCheckpointType) ? value as LessonCheckpointType : "text";
+}
+
+function normalizeCheckpointTypes(value: unknown, fallback: LessonCheckpointType): LessonCheckpointType[] {
+  const formats = Array.isArray(value)
+    ? value.map(normalizeCheckpointType).filter((item, index, array) => array.indexOf(item) === index)
+    : [];
+
+  return formats.length > 0 ? formats : [fallback];
 }
 
 function normalizeTasks(value: unknown): LessonTask[] {
@@ -429,13 +464,16 @@ function normalizeTasks(value: unknown): LessonTask[] {
         : [];
       const videoUrl = typeof record.video_url === "string" && record.video_url.trim() ? record.video_url : undefined;
 
+      const checkpointType = normalizeCheckpointType(record.checkpoint_type);
+
       tasks.push({
         task_id: taskId,
         title,
         instruction: typeof record.instruction === "string" ? record.instruction : "",
         ...(videoUrl ? { video_url: videoUrl } : {}),
         action: typeof record.action === "string" ? record.action : "",
-        checkpoint_type: normalizeCheckpointType(record.checkpoint_type),
+        checkpoint_type: checkpointType,
+        checkpoint_types: normalizeCheckpointTypes(record.checkpoint_types, checkpointType),
         ai_verification_criteria: criteria,
       });
     });
@@ -523,19 +561,17 @@ function transformLesson(moduleId: string, lessonId: string, lessonJson: LessonV
   const tasks = normalizeTasks(lessonJson.tasks);
   const finalSubmission = normalizeFinalSubmission(lessonJson.final_submission, tasks);
   const body: LessonSection[] = [
-    ...(objectives.length > 0
-      ? [{
-          heading: "Objectives",
-          body: objectives.map((objective) => `- ${objective}`).join("\n"),
-        }]
-      : []),
     ...content
       .filter((block) => !["code", "image", "video"].includes(block.type))
-      .map((block, index) => ({
-        heading: block.title ?? (block.type === "text" && index === 0 ? "Lesson" : SECTION_LABELS[block.type].heading),
-        body: blockText(block),
-        tone: SECTION_LABELS[block.type].tone,
-      })),
+      .map((block, index) => {
+        const label = sectionLabelFor(block, index);
+        return {
+          heading: label.heading,
+          body: blockText(block),
+          tone: label.tone,
+        };
+      })
+      .filter((section) => section.body.trim().length > 0),
   ];
 
   const codeExamples = content
@@ -584,6 +620,7 @@ function transformLesson(moduleId: string, lessonId: string, lessonJson: LessonV
     lessonId,
     title: lessonJson.title,
     summary: lessonJson.description ?? objectives[0] ?? `Complete ${lessonJson.title} and check your understanding.`,
+    objectives,
     body: body.length > 0 ? body : [{ heading: "Lesson", body: "Lesson content is being prepared." }],
     codeExamples,
     images,
@@ -603,7 +640,7 @@ async function fetchLessonRow(moduleId: string, lessonId: string): Promise<Lesso
   const supabase = createClient();
   const { data: lessonRows, error } = await supabase
     .from("lessons")
-    .select("id, module_id, lesson_key, title, order_index, current_version_id, modules!inner(module_key, title), lesson_versions(id, content_json)")
+    .select("id, module_id, lesson_key, title, order_index, current_version_id, modules!inner(module_key, title)")
     .eq("lesson_key", lessonId)
     .eq("modules.module_key", moduleId)
     .limit(1);
@@ -619,7 +656,7 @@ async function fetchFirstLessonRow(moduleId: string): Promise<LessonRow | null> 
   const supabase = createClient();
   const { data: lessonRows, error } = await supabase
     .from("lessons")
-    .select("id, module_id, lesson_key, title, order_index, current_version_id, modules!inner(module_key, title), lesson_versions(id, content_json)")
+    .select("id, module_id, lesson_key, title, order_index, current_version_id, modules!inner(module_key, title)")
     .eq("modules.module_key", moduleId)
     .order("order_index", { ascending: true })
     .limit(1);
@@ -631,25 +668,80 @@ async function fetchFirstLessonRow(moduleId: string): Promise<LessonRow | null> 
   return (lessonRows?.[0] ?? null) as unknown as LessonRow | null;
 }
 
-export async function getLesson(moduleId: string, lessonId: string): Promise<Lesson> {
+async function fetchCurrentLessonVersion(lessonRow: LessonRow): Promise<LessonVersionRow | null> {
   const supabase = createClient();
+
+  if (lessonRow.current_version_id) {
+    const { data, error } = await supabase
+      .from("lesson_versions")
+      .select("id, content_json")
+      .eq("id", lessonRow.current_version_id)
+      .maybeSingle();
+
+    if (!error && data?.content_json) {
+      return data as unknown as LessonVersionRow;
+    }
+  }
+
+  const { data: versions, error } = await supabase
+    .from("lesson_versions")
+    .select("id, content_json")
+    .eq("lesson_id", lessonRow.id)
+    .order("version_number", { ascending: false })
+    .limit(1);
+
+  if (error) return null;
+  return (versions?.[0] ?? null) as unknown as LessonVersionRow | null;
+}
+
+async function fetchCurrentQuizVersion(lessonId: string): Promise<QuizVersionRow | null> {
+  const supabase = createClient();
+  const { data: quizRows, error: quizError } = await supabase
+    .from("quizzes")
+    .select("id, current_version_id")
+    .eq("lesson_id", lessonId)
+    .limit(1);
+
+  if (quizError) return null;
+
+  const quizRow = (quizRows?.[0] ?? null) as QuizRow | null;
+  if (!quizRow) return null;
+
+  if (quizRow.current_version_id) {
+    const { data, error } = await supabase
+      .from("quiz_versions")
+      .select("id, content_json")
+      .eq("id", quizRow.current_version_id)
+      .maybeSingle();
+
+    if (!error && data?.content_json) {
+      return data as unknown as QuizVersionRow;
+    }
+  }
+
+  const { data: versions, error } = await supabase
+    .from("quiz_versions")
+    .select("id, content_json")
+    .eq("quiz_id", quizRow.id)
+    .order("version_number", { ascending: false })
+    .limit(1);
+
+  if (error) return null;
+  return (versions?.[0] ?? null) as unknown as QuizVersionRow | null;
+}
+
+export async function getLesson(moduleId: string, lessonId: string): Promise<Lesson> {
   const canonicalLessonId = getCanonicalLessonId(moduleId, lessonId);
   const firstLessonAlias = IMPORTED_FIRST_LESSON[moduleId];
   const shouldUseFirstLesson = lessonId === "intro" || canonicalLessonId === firstLessonAlias;
   const lessonRow = (await fetchLessonRow(moduleId, canonicalLessonId)) ?? (shouldUseFirstLesson ? await fetchFirstLessonRow(moduleId) : null);
-  const lessonVersion = lessonRow?.lesson_versions?.find((version) => version.id === lessonRow.current_version_id) ?? lessonRow?.lesson_versions?.[0];
+  const lessonVersion = lessonRow ? await fetchCurrentLessonVersion(lessonRow) : null;
 
   if (!lessonRow || !lessonVersion?.content_json) {
     return buildAuthoredFallbackLesson(moduleId, canonicalLessonId) ?? buildLesson(moduleId, canonicalLessonId);
   }
 
-  const { data: quizRows } = await supabase
-    .from("quizzes")
-    .select("id, current_version_id, quiz_versions(id, content_json)")
-    .eq("lesson_id", lessonRow.id)
-    .limit(1);
-  const quizRow = (quizRows?.[0] ?? null) as QuizRow | null;
-  const quizVersion = quizRow?.quiz_versions?.find((version) => version.id === quizRow.current_version_id) ?? quizRow?.quiz_versions?.[0] ?? null;
+  const quizVersion = await fetchCurrentQuizVersion(lessonRow.id);
 
   return transformLesson(moduleId, lessonRow.lesson_key ?? lessonId, lessonVersion.content_json, quizVersion?.content_json ?? null);
 }

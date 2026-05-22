@@ -29,6 +29,8 @@ export type HandsOnTaskRequirement = {
   instruction: string;
   short_video_requirement: string;
   student_action: string;
+  checkpoint_types: CheckpointType[];
+  /** @deprecated Use checkpoint_types. Kept for older saved blueprints. */
   checkpoint_type: CheckpointType;
   ai_verification_criteria: string[];
   ai_mentor_guidance: string;
@@ -109,6 +111,7 @@ export type LessonTask = {
   instruction: string;
   video_url: string;
   action: string;
+  checkpoint_types?: CheckpointType[];
   checkpoint_type: CheckpointType;
   ai_verification_criteria: string[];
 };
@@ -172,10 +175,24 @@ export type StoryboardScene = {
   title: string;
   duration_seconds: number;
   on_screen_text: string;
-  visual_type: "title_slide" | "concept_slide" | "demo_slide" | "checklist_slide" | "quiz_prompt_slide" | "recap_slide";
+  visual_type:
+    | "title_slide"
+    | "concept_slide"
+    | "diagram_slide"
+    | "demo_slide"
+    | "code_slide"
+    | "checklist_slide"
+    | "quiz_prompt_slide"
+    | "recap_slide";
   animation_style: string;
   narration_text: string;
   asset_references: string[];
+  visual_elements?: Array<{
+    type: "icon" | "arrow" | "card" | "code" | "badge";
+    label: string;
+    detail?: string;
+    icon?: "browser" | "dns" | "server" | "database" | "code" | "checkpoint" | "project" | "mentor";
+  }>;
 };
 
 export type LessonStoryboard = {
@@ -217,10 +234,25 @@ export type LessonRender = {
       on_screen_text: string;
       animation_style: string;
       asset_references: string[];
+      visual_elements?: StoryboardScene["visual_elements"];
+      video_kind?: "intro" | "task" | "recap" | "other";
+      task_index?: number;
+      task_id?: string;
     }>;
     renderer_webhook_called: boolean;
     slide_asset_urls?: string[];
     tts_audio_urls?: string[];
+    intro_video_url?: string;
+    lesson_video_url?: string;
+    scene_video_urls?: Array<{
+      scene_id: string;
+      title: string;
+      url: string;
+      duration_seconds: number;
+      kind: "intro" | "task" | "recap" | "other";
+      task_index?: number;
+      task_id?: string;
+    }>;
     local_renderer_completed?: boolean;
     local_renderer_error?: string | null;
   };
@@ -246,10 +278,12 @@ export type LessonRenderQueueJob = {
 export type LessonReviewStatus = "draft" | "generated" | "in_review" | "approved" | "published" | "archived";
 
 export type PublishTarget = {
+  course_key?: string;
   module_key: string;
   module_title: string;
   module_description: string;
   lesson_key: string;
+  lesson_title?: string;
   lesson_order_index: number;
 };
 

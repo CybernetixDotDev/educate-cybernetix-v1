@@ -38,6 +38,9 @@ values (
     'image/svg+xml',
     'image/png',
     'image/jpeg',
+    'audio/mpeg',
+    'audio/mp4',
+    'audio/aac',
     'video/mp4'
   ]
 )

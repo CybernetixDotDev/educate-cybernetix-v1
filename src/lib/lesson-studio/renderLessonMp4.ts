@@ -87,7 +87,62 @@ function buildThumbnailSvg(storyboard: LessonStoryboard, lesson: LessonGenerator
 </svg>`;
 }
 
+function normalizeComparable(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function sceneTaskIndex(scene: LessonStoryboard["scenes"][number], lesson: LessonGeneratorOutput) {
+  const explicit = scene.scene_id.match(/^task-(\d+)$/i);
+  if (explicit) {
+    const index = Number(explicit[1]) - 1;
+    return index >= 0 && index < lesson.tasks.length ? index : null;
+  }
+
+  const sceneText = normalizeComparable(`${scene.scene_id} ${scene.title} ${scene.on_screen_text}`);
+  const matchIndex = lesson.tasks.findIndex((task) => {
+    const taskTitle = normalizeComparable(task.title);
+    const taskId = normalizeComparable(task.task_id);
+    return (taskTitle.length > 0 && sceneText.includes(taskTitle)) || (taskId.length > 0 && sceneText.includes(taskId));
+  });
+
+  return matchIndex >= 0 ? matchIndex : null;
+}
+
+function classifyStoryboardScenes(storyboard: LessonStoryboard, lesson: LessonGeneratorOutput) {
+  let nextChecklistTask = 0;
+
+  return storyboard.scenes.map((scene, index) => {
+    const explicitTaskIndex = sceneTaskIndex(scene, lesson);
+    if (explicitTaskIndex !== null) {
+      nextChecklistTask = Math.max(nextChecklistTask, explicitTaskIndex + 1);
+      return {
+        kind: "task" as const,
+        task_index: explicitTaskIndex,
+        task_id: lesson.tasks[explicitTaskIndex]?.task_id,
+      };
+    }
+
+    if (scene.visual_type === "checklist_slide" && nextChecklistTask < lesson.tasks.length) {
+      const taskIndex = nextChecklistTask;
+      nextChecklistTask += 1;
+      return {
+        kind: "task" as const,
+        task_index: taskIndex,
+        task_id: lesson.tasks[taskIndex]?.task_id,
+      };
+    }
+
+    if (scene.visual_type === "recap_slide" || /recap|next step|finish/i.test(scene.title)) {
+      return { kind: "recap" as const };
+    }
+
+    return { kind: index === 0 ? "intro" as const : "other" as const };
+  });
+}
+
 function renderManifest(storyboard: LessonStoryboard, lesson: LessonGeneratorOutput, basePath: string) {
+  const classifications = classifyStoryboardScenes(storyboard, lesson);
+
   return {
     bucket: BUCKET,
     base_path: basePath,
@@ -103,7 +158,7 @@ function renderManifest(storyboard: LessonStoryboard, lesson: LessonGeneratorOut
       text: scene.narration_text,
       duration_seconds: scene.duration_seconds,
     })),
-    slide_manifest: storyboard.scenes.map((scene) => ({
+    slide_manifest: storyboard.scenes.map((scene, index) => ({
       scene_id: scene.scene_id,
       title: scene.title,
       visual_type: scene.visual_type,
@@ -111,6 +166,10 @@ function renderManifest(storyboard: LessonStoryboard, lesson: LessonGeneratorOut
       on_screen_text: scene.on_screen_text,
       animation_style: scene.animation_style,
       asset_references: scene.asset_references,
+      visual_elements: scene.visual_elements,
+      video_kind: classifications[index]?.kind ?? "other",
+      task_index: classifications[index]?.task_index,
+      task_id: classifications[index]?.task_id,
     })),
     quiz_prompts: lesson.quiz.questions.map((question) => question.question),
     renderer_webhook_called: false,
@@ -151,6 +210,32 @@ function toLessonRender(row: Record<string, unknown>): LessonRender {
     error_message: typeof row.error_message === "string" ? row.error_message : null,
     render_json: row.render_json as LessonRender["render_json"],
   };
+}
+
+export async function getLessonRender(renderId: string): Promise<LessonStudioActionResult<LessonRender>> {
+  const role = await requireRole(["admin"]);
+  if (!role) return { ok: false, data: null, error: "Admin access is required." };
+
+  if (!renderId) return { ok: false, data: null, error: "renderId is required." };
+
+  try {
+    const supabase = createClient(await cookies());
+    const { data, error } = await supabase
+      .from("lesson_renders")
+      .select("*")
+      .eq("id", renderId)
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    return { ok: true, data: toLessonRender(data as Record<string, unknown>), error: null };
+  } catch (error) {
+    return {
+      ok: false,
+      data: null,
+      error: error instanceof Error ? error.message : "Unable to load render status.",
+    };
+  }
 }
 
 async function uploadText(

@@ -77,7 +77,7 @@ async function mentorFinalReview(input: {
   const raw = await callJsonLLM<unknown>(
     model,
     [
-      "You are Cyber Mentor giving a final co-op review.",
+      "You are Cyber Mentor giving a final guided build review.",
       "Review all checkpoint verification results, the final project submission, and the micro-survey.",
       "Award completion only if all required checkpoints passed and the final project evidence is clear.",
       "Return JSON only with this shape:",
@@ -116,7 +116,7 @@ async function mentorFinalReview(input: {
     {
       system: "You are Cyber Mentor, a warm teen-friendly coach. Be clear, supportive, and practical. Never shame the student.",
       temperature: 0.2,
-      metadata: { system: "student-coop-final-review", lesson_title: input.lessonTitle },
+      metadata: { system: "student-guided-build-final-review", lesson_title: input.lessonTitle },
     },
   );
 
@@ -155,7 +155,7 @@ export async function getCoOpProgress(moduleKey: string, lessonKey: string): Pro
       error: null,
     };
   } catch (error) {
-    return { ok: false, data: null, error: error instanceof Error ? error.message : "Unable to load co-op progress." };
+    return { ok: false, data: null, error: error instanceof Error ? error.message : "Unable to load guided build progress." };
   }
 }
 
@@ -291,11 +291,11 @@ export async function submitFinalCoOp(input: {
           lesson_title: input.lessonTitle,
           status: "completed",
           progress_percent: 100,
-          completed_steps: ["co_op_tasks", "final_project_submission", "mentor_final_review"],
+          completed_steps: ["guided_build_tasks", "final_project_submission", "mentor_final_review"],
           completed_at: now,
           started_at: now,
           metadata: {
-            source: "student_co_op_lesson",
+            source: "student_guided_build_lesson",
             final_submission_id: (data as CoOpFinalSubmission).id,
             mentor_review: mentorReview,
           },

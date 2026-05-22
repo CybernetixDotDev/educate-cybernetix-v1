@@ -37,11 +37,12 @@ Output exactly this JSON shape:
   "lesson_blocks": [],
   "tasks": [
     {
-      "task_id": "w1l1-t1",
+      "task_id": "w1d1-t1",
       "title": "",
       "instruction": "",
       "video_url": "",
       "action": "",
+      "checkpoint_types": ["screenshot", "file"],
       "checkpoint_type": "screenshot",
       "ai_verification_criteria": []
     }
@@ -97,14 +98,28 @@ Output exactly this JSON shape:
       }
     }
   ],
-  "quiz": {},
+  "quiz": {
+    "questions": [
+      {
+        "type": "mcq",
+        "question": "",
+        "options": ["", "", "", ""],
+        "answer": "",
+        "explanation": "",
+        "difficulty": "easy",
+        "skill_tags": []
+      }
+    ]
+  },
   "project_checklist": [],
   "transcript": ""
 }
 
 Every lesson MUST contain 5-7 co_op_tasks.
 Every lesson MUST also contain a matching first-class tasks array with 5-7 task objects.
-Each tasks item MUST include task_id, title, instruction, video_url, action, checkpoint_type, and ai_verification_criteria.
+Each tasks item MUST include task_id, title, instruction, video_url, action, checkpoint_types, checkpoint_type, and ai_verification_criteria.
+Each checkpoint_types array MUST include one or more of: screenshot, file, link, text. checkpoint_type MUST equal the first checkpoint_types value for backward compatibility.
+The quiz MUST contain the exact number of questions requested in the Lesson Brief. Do not return an empty quiz.
 Each lesson MUST include final_submission.
 Final submission MUST include all 5-7 task checkpoint IDs, final project upload, the two-question micro-survey, and AI Mentor Final Review.
 Each co_op_task MUST include instruction, short video, action, checkpoint submission, AI verification, and AI mentor support.
@@ -127,18 +142,21 @@ function stringArray(value: unknown) {
 function normalizeBlocks(value: unknown): LessonBlock[] {
   if (!Array.isArray(value)) return [];
 
-  return value.filter(isRecord).map((block) => ({
-    type: stringValue(block.type, "text") as LessonBlock["type"],
-    title: stringValue(block.title) || undefined,
-    value: stringValue(block.value) || undefined,
-    url: stringValue(block.url) || undefined,
-    alt: stringValue(block.alt) || undefined,
-    language: stringValue(block.language) || undefined,
-    provider: stringValue(block.provider) || undefined,
-    duration_seconds: typeof block.duration_seconds === "number" ? block.duration_seconds : undefined,
-    thumbnail_url: stringValue(block.thumbnail_url) || undefined,
-    transcript: stringValue(block.transcript) || undefined,
-  }));
+  return value
+    .filter(isRecord)
+    .map((block) => ({
+      type: stringValue(block.type, "text") as LessonBlock["type"],
+      title: stringValue(block.title) || undefined,
+      value: stringValue(block.value) || undefined,
+      url: stringValue(block.url) || undefined,
+      alt: stringValue(block.alt) || undefined,
+      language: stringValue(block.language) || undefined,
+      provider: stringValue(block.provider) || undefined,
+      duration_seconds: typeof block.duration_seconds === "number" ? block.duration_seconds : undefined,
+      thumbnail_url: stringValue(block.thumbnail_url) || undefined,
+      transcript: stringValue(block.transcript) || undefined,
+    }))
+    .filter((block) => Boolean(block.value?.trim() || block.url?.trim()));
 }
 
 function normalizeQuiz(value: unknown): LessonGeneratorOutput["quiz"] {
@@ -146,26 +164,84 @@ function normalizeQuiz(value: unknown): LessonGeneratorOutput["quiz"] {
   const questions = Array.isArray(record.questions) ? record.questions.filter(isRecord) : [];
 
   return {
-    questions: questions.map((question) => ({
-      type:
+    questions: questions.map((question) => {
+      const type: LessonGeneratorOutput["quiz"]["questions"][number]["type"] =
         question.type === "true_false" || question.type === "short" || question.type === "mcq"
           ? question.type
           : Array.isArray(question.options)
             ? "mcq"
-            : "short",
-      question: stringValue(question.question),
-      options: Array.isArray(question.options) ? question.options.filter((option): option is string => typeof option === "string") : undefined,
-      answer:
-        typeof question.answer === "string" || typeof question.answer === "number" || typeof question.answer === "boolean"
-          ? question.answer
-          : "",
-      explanation: stringValue(question.explanation) || undefined,
-      difficulty:
+            : "short";
+      const difficulty: LessonGeneratorOutput["quiz"]["questions"][number]["difficulty"] =
         question.difficulty === "easy" || question.difficulty === "medium" || question.difficulty === "hard"
           ? question.difficulty
-          : undefined,
-      skill_tags: stringArray(question.skill_tags),
-    })),
+          : undefined;
+
+      return {
+        type,
+        question: stringValue(question.question),
+        options: Array.isArray(question.options) ? question.options.filter((option): option is string => typeof option === "string") : undefined,
+        answer:
+          typeof question.answer === "string" || typeof question.answer === "number" || typeof question.answer === "boolean"
+            ? question.answer
+            : "",
+        explanation: stringValue(question.explanation) || undefined,
+        difficulty,
+        skill_tags: stringArray(question.skill_tags),
+      };
+    }).filter((question) => question.question.trim().length > 0),
+  };
+}
+
+function fallbackQuiz(brief: LessonBrief): LessonGeneratorOutput["quiz"] {
+  const count = Math.max(1, Math.min(20, Math.round(brief.quiz_question_count || 5)));
+  const objectives = brief.learning_objectives.length > 0 ? brief.learning_objectives : [brief.lesson_title];
+  const taskRequirements = brief.hands_on_task_requirements ?? [];
+
+  return {
+    questions: Array.from({ length: count }, (_, index) => {
+      const objective = objectives[index % objectives.length];
+      const task = taskRequirements[index % Math.max(1, taskRequirements.length)];
+
+      if (index % 3 === 1) {
+        return {
+          type: "true_false",
+          question: `True or false: this lesson helps you ${objective.toLowerCase().replace(/[.?!]$/g, "")}.`,
+          options: ["True", "False"],
+          answer: true,
+          explanation: `This is one of the lesson objectives: ${objective}`,
+          difficulty: brief.quiz_difficulty,
+          skill_tags: [brief.subject_area],
+        };
+      }
+
+      if (index % 3 === 2) {
+        return {
+          type: "short",
+          question: task?.task_name
+            ? `In one sentence, what should you create for "${task.task_name}"?`
+            : `In one sentence, explain the main idea of ${brief.lesson_title}.`,
+          answer: task?.expected_output || brief.required_project_outcome,
+          explanation: "A strong answer should describe the expected output in the student's own words.",
+          difficulty: brief.quiz_difficulty,
+          skill_tags: [brief.subject_area],
+        };
+      }
+
+      return {
+        type: "mcq",
+        question: "What is the best description of the goal for this lesson?",
+        options: [
+          brief.required_project_outcome,
+          "Only watch the video without doing the task",
+          "Skip the checkpoint submission",
+          "Memorize terms without building anything",
+        ],
+        answer: brief.required_project_outcome,
+        explanation: "Educate-Cybernetix lessons are project-based, so the best answer is the visible project outcome.",
+        difficulty: brief.quiz_difficulty,
+        skill_tags: [brief.subject_area],
+      };
+    }),
   };
 }
 
@@ -176,6 +252,11 @@ function acceptedFormats(value: unknown): CoOpTask["checkpoint_submission"]["acc
     : [];
 
   return formats.length > 0 ? formats : ["screenshot", "file", "link", "text"];
+}
+
+function requirementCheckpointTypes(requirement: LessonBrief["hands_on_task_requirements"][number] | undefined) {
+  if (!requirement) return [];
+  return acceptedFormats(requirement.checkpoint_types?.length ? requirement.checkpoint_types : [requirement.checkpoint_type]);
 }
 
 function clampVideoDuration(value: unknown) {
@@ -194,10 +275,10 @@ function normalizeCoOpTasks(value: unknown, brief: LessonBrief): CoOpTask[] {
     const aiMentorSupport = isRecord(task.ai_mentor_support) ? task.ai_mentor_support : {};
 
     return {
-      title: stringValue(task.title, requirement?.task_name ?? `Co-Op Task ${index + 1}`),
+      title: stringValue(task.title, requirement?.task_name ?? `Guided Build Task ${index + 1}`),
       instruction: stringValue(task.instruction, requirement?.instruction ?? ""),
       short_video: {
-        title: stringValue(shortVideo.title, `Watch: Co-Op Task ${index + 1}`),
+        title: stringValue(shortVideo.title, `Watch: Guided Build Task ${index + 1}`),
         script: stringValue(shortVideo.script, requirement?.short_video_requirement ?? ""),
         duration_minutes: clampVideoDuration(shortVideo.duration_minutes),
         url: stringValue(shortVideo.url) || undefined,
@@ -205,7 +286,7 @@ function normalizeCoOpTasks(value: unknown, brief: LessonBrief): CoOpTask[] {
       action: stringValue(task.action, requirement?.student_action ?? ""),
       checkpoint_submission: {
         prompt: stringValue(checkpointSubmission.prompt, "Upload a screenshot, file, link, or short explanation showing your work."),
-        accepted_formats: requirement?.checkpoint_type ? [requirement.checkpoint_type] : acceptedFormats(checkpointSubmission.accepted_formats),
+        accepted_formats: requirement ? requirementCheckpointTypes(requirement) : acceptedFormats(checkpointSubmission.accepted_formats),
       },
       ai_verification: {
         criteria:
@@ -237,7 +318,7 @@ function normalizeCoOpTasks(value: unknown, brief: LessonBrief): CoOpTask[] {
       action: task.student_action,
       checkpoint_submission: {
         prompt: task.expected_output,
-        accepted_formats: [task.checkpoint_type],
+        accepted_formats: requirementCheckpointTypes(task),
       },
       ai_verification: {
         criteria: task.ai_verification_criteria,
@@ -294,7 +375,10 @@ function normalizeTasks(value: unknown, coOpTasks: CoOpTask[], brief: LessonBrie
     instruction: stringValue(task.instruction, taskRequirements[index]?.instruction ?? coOpTasks[index]?.instruction ?? ""),
     video_url: stringValue(task.video_url, coOpTasks[index]?.short_video.url ?? ""),
     action: stringValue(task.action, taskRequirements[index]?.student_action ?? coOpTasks[index]?.action ?? ""),
-    checkpoint_type: taskRequirements[index]?.checkpoint_type ?? checkpointType(task.checkpoint_type),
+    checkpoint_types: taskRequirements[index] ? requirementCheckpointTypes(taskRequirements[index]) : acceptedFormats(task.checkpoint_types),
+    checkpoint_type: taskRequirements[index]
+      ? requirementCheckpointTypes(taskRequirements[index])[0] ?? "screenshot"
+      : acceptedFormats(task.checkpoint_types)[0] ?? checkpointType(task.checkpoint_type),
     ai_verification_criteria:
       stringArray(task.ai_verification_criteria).length > 0
         ? stringArray(task.ai_verification_criteria)
@@ -309,6 +393,7 @@ function normalizeTasks(value: unknown, coOpTasks: CoOpTask[], brief: LessonBrie
     instruction: task.instruction,
     video_url: task.short_video.url ?? "",
     action: task.action,
+    checkpoint_types: task.checkpoint_submission.accepted_formats,
     checkpoint_type: task.checkpoint_submission.accepted_formats[0] ?? "screenshot",
     ai_verification_criteria: task.ai_verification.criteria.length > 0 ? task.ai_verification.criteria : brief.task_verification_criteria,
   }));
@@ -359,7 +444,7 @@ function normalizeFinalSubmission(value: unknown, tasks: LessonTask[], brief: Le
         aiMentorFinalReview.review_prompt,
         finalRequirements?.ai_mentor_feedback_rules?.length
           ? finalRequirements.ai_mentor_feedback_rules.join("\n")
-          : "Review every task checkpoint, the final project upload, and the micro-survey. Give supportive feedback, award completion only when the criteria are met, then unlock the next co-op.",
+          : "Review every task checkpoint, the final project upload, and the micro-survey. Give supportive feedback, award completion only when the criteria are met, then unlock the next guided build.",
       ),
     },
   };
@@ -370,6 +455,12 @@ function normalizeLessonPackage(value: unknown, brief: LessonBrief): LessonGener
   const buildTask = isRecord(record.build_task) ? record.build_task : {};
   const coOpTasks = normalizeCoOpTasks(record.co_op_tasks, brief);
   const tasks = normalizeTasks(record.tasks, coOpTasks, brief);
+  const quiz = normalizeQuiz(record.quiz);
+  const minimumQuiz = fallbackQuiz(brief);
+  const quizQuestionCount = Math.max(1, Math.min(20, Math.round(brief.quiz_question_count || 5)));
+  const finalQuiz = {
+    questions: [...quiz.questions, ...minimumQuiz.questions].slice(0, quizQuestionCount),
+  };
 
   return {
     hook: stringValue(record.hook, `Let's build ${brief.lesson_title}.`),
@@ -389,7 +480,7 @@ function normalizeLessonPackage(value: unknown, brief: LessonBrief): LessonGener
     tasks,
     final_submission: normalizeFinalSubmission(record.final_submission, tasks, brief),
     co_op_tasks: coOpTasks,
-    quiz: normalizeQuiz(record.quiz),
+    quiz: finalQuiz,
     project_checklist: stringArray(record.project_checklist),
     transcript: stringValue(record.transcript),
   };
@@ -459,11 +550,13 @@ export async function generateLessonPackage(
       [
         "Generate 5-7 co_op_tasks.",
         "Generate a matching tasks array with 5-7 first-class task objects.",
-        "Use task_id values that are stable and lesson-scoped, like w1l1-t1 when lesson keys are known.",
-        "Each first-class task must include: task_id, title, instruction, video_url, action, checkpoint_type, ai_verification_criteria.",
+        "Use task_id values that are stable and lesson-scoped, like w1d1-t1 when lesson keys are known.",
+        "Each first-class task must include: task_id, title, instruction, video_url, action, checkpoint_types, checkpoint_type, ai_verification_criteria.",
+        "Each checkpoint_types array must include every allowed submission format from the brief for that task.",
+        `Generate exactly ${Math.max(1, Math.round(brief.quiz_question_count || 5))} quiz questions. Do not return an empty quiz.`,
         "Generate final_submission with all task checkpoint IDs, final project upload, the exact two-question micro-survey, and AI Mentor Final Review.",
         "The micro-survey must ask exactly: Do you want to continue? and What was the most interesting thing you learned?",
-        "AI Mentor Final Review must review all submissions, give feedback, award completion, and unlock the next co-op.",
+        "AI Mentor Final Review must review all submissions, give feedback, award completion, and unlock the next guided build.",
         "Each task must include: instruction, short_video, action, checkpoint_submission, ai_verification, ai_mentor_support.",
         "Each short_video must be planned for 2-5 minutes.",
         "Each ai_verification.criteria must map back to the Task Verification Criteria in the lesson brief.",
