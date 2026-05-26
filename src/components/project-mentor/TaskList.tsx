@@ -82,7 +82,7 @@ export function TaskList({ tasks, onRefresh, onSelectTask, selectedTaskId }: Tas
     return (
       <section className="rounded-3xl border border-dashed border-teal-300 bg-white p-6 text-center shadow-sm">
         <p className="text-sm font-bold text-slate-950">No tasks yet</p>
-        <p className="mt-2 text-sm text-slate-600">Ask Cyber Mentor to turn your idea into a few tiny build steps.</p>
+        <p className="mt-2 text-sm text-slate-600">Ask Zylo to turn your idea into a few tiny build steps.</p>
       </section>
     );
   }

@@ -9,6 +9,7 @@ import { useStudent } from "@/hooks/useStudent";
 import { generateProjectTasks, type GeneratedProjectTask, type ProjectTasksJSON } from "@/lib/ai/generateProjectTasks";
 import { generateSingleTask } from "@/lib/ai/generateSingleTask";
 import { saveProjectTasks } from "@/lib/ai/saveProjectTasks";
+import { MENTOR_IDENTITY } from "@/lib/mentor/identity";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -139,28 +140,36 @@ export function ProjectMentorClient() {
     <main className="min-h-screen bg-[#f7faf9] px-4 py-6 text-slate-950 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-7">
         <header className="rounded-3xl border border-teal-100 bg-white p-7 shadow-sm sm:p-9">
-          <div>
-            <Link href="/dashboard" className="text-sm font-bold text-teal-700 hover:text-teal-900">
-              Back to home
-            </Link>
-            <p className="mt-4 text-sm font-semibold uppercase tracking-wide text-teal-700">
-              {student ? `${student.display_name}'s project mission` : "Project mission"}
-            </p>
-            <h1 className="mt-2 max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
-              Build something real, one small step at a time.
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-              Cyber Mentor turns your project idea into tiny tasks, helps when code breaks, and keeps the mission moving.
-            </p>
-            <div className="mt-6 inline-flex rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-bold text-teal-900">
-              You are here: My Project &rarr; Next step: Finish one task
+          <div className="grid gap-6 lg:grid-cols-[1fr_13rem] lg:items-center">
+            <div>
+              <Link href="/dashboard" className="text-sm font-bold text-teal-700 hover:text-teal-900">
+                Back to home
+              </Link>
+              <p className="mt-4 text-sm font-semibold uppercase tracking-wide text-teal-700">
+                {student ? `${student.display_name}'s project mission` : "Project mission"}
+              </p>
+              <h1 className="mt-2 max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
+                Build something real, one small step at a time.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                {MENTOR_IDENTITY.name} turns your project idea into tiny tasks, helps when code breaks, and keeps the mission moving.
+              </p>
+              <div className="mt-6 inline-flex rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-bold text-teal-900">
+                You are here: My Project &rarr; Next step: Finish one task
+              </div>
+            </div>
+            <div className="hidden justify-center lg:flex">
+              <div className="flex h-48 w-48 items-center justify-center rounded-[2rem] bg-teal-50 ring-1 ring-teal-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={MENTOR_IDENTITY.poses.pointing} alt="Zylo" className="h-full w-full object-contain p-3" />
+              </div>
             </div>
           </div>
           <Link
             href={projectId ? `/mentor?project_id=${projectId}&intent=project` : "/mentor?intent=project"}
             className="mt-6 inline-flex rounded-xl bg-teal-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-700"
           >
-            Ask Cyber Mentor
+            Ask Zylo
           </Link>
         </header>
 

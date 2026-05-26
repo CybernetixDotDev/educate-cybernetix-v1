@@ -34,7 +34,7 @@ export function ProjectOverview({ project, tasks, loading = false }: ProjectOver
           <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Mission Snapshot</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{project?.title ?? "No active project yet"}</h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-            {project?.description ?? "Start with a small project idea. Cyber Mentor will help turn it into a simple build plan."}
+            {project?.description ?? "Start with a small project idea. Zylo will help turn it into a simple build plan."}
           </p>
         </div>
         <div className="rounded-2xl bg-emerald-50 px-5 py-4 text-emerald-950">

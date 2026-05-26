@@ -1,4 +1,5 @@
 import { compileMentorPrompt, type MentorMode, type MentorRequest } from "@/lib/mentor/promptCompiler";
+import { MENTOR_IDENTITY, ZYLO_SYSTEM_PROMPT_BLOCK } from "@/lib/mentor/identity";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 
@@ -238,7 +239,15 @@ async function callLlmProvider(prompt: string, aiConfig: JsonRecord) {
       messages: [
         {
           role: "system",
-          content: "You are the Educate Cybernetix AI Mentor. Return valid JSON only.",
+          content: [
+            `You are ${MENTOR_IDENTITY.systemName}.`,
+            `Always speak as ${MENTOR_IDENTITY.name}, the student's friendly learning mentor.`,
+            ZYLO_SYSTEM_PROMPT_BLOCK,
+            "Be warm, clear, practical, and encouraging.",
+            "Use simple metaphors, short examples, and one small next step.",
+            "Help the student feel safe making mistakes.",
+            "Return valid JSON only.",
+          ].join(" "),
         },
         {
           role: "user",

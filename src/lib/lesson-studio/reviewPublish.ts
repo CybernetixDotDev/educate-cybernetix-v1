@@ -83,10 +83,23 @@ function hasSplitTaskVideos(render?: LessonRender | null) {
   return sceneVideos(render).some((scene) => scene.kind === "task" && scene.url);
 }
 
+function renderIsPublishable(render?: LessonRender | null) {
+  if (!render) return false;
+  if (render.status === "completed") return true;
+  return Boolean(render.mp4_url && render.render_json?.local_renderer_completed);
+}
+
 function introVideo(render?: LessonRender | null) {
+  if (render?.render_json?.intro_lesson_video_url) {
+    return {
+      title: "Zylo lesson video",
+      url: render.render_json.intro_lesson_video_url,
+    };
+  }
+
   if (render?.render_json?.intro_video_url) {
     return {
-      title: "Cyber Mentor lesson intro",
+      title: "Zylo lesson intro",
       url: render.render_json.intro_video_url,
     };
   }
@@ -107,7 +120,7 @@ function lessonWalkthroughVideo(render?: LessonRender | null) {
   return render?.render_json?.lesson_video_url
     ? {
         type: "video" as const,
-        title: "Cyber Mentor lesson walkthrough",
+        title: "Zylo lesson walkthrough",
         value: render.render_json.lesson_video_url,
         url: render.render_json.lesson_video_url,
         provider: "lesson-renderer",
@@ -146,7 +159,7 @@ function toCurriculumLesson(target: PublishTarget, lesson: LessonGeneratorOutput
   const video = intro?.url
     ? {
         type: "video" as const,
-        title: intro.title || "Cyber Mentor lesson intro",
+        title: intro.title || "Zylo lesson intro",
         value: intro.url,
         url: intro.url,
         provider: "lesson-renderer",
@@ -171,6 +184,7 @@ function toCurriculumLesson(target: PublishTarget, lesson: LessonGeneratorOutput
     description: lesson.hook,
     estimated_minutes: Math.max(10, Math.round(lesson.tasks.length * 8)),
     objectives: lesson.objective,
+    teaching_sequence: lesson.teaching_sequence,
     ...(video ? { video } : {}),
     content: curriculumContent,
     tasks,
@@ -309,12 +323,12 @@ export async function publishReviewedLesson(
     return { ok: false, data: null, error: "Module key and lesson key are required." };
   }
 
-  if (render && render.status !== "completed") {
+  if (render && !renderIsPublishable(render)) {
     return { ok: false, data: null, error: "Wait for the MP4 render to complete before publishing this lesson." };
   }
 
-  if (render && !render.render_json?.intro_video_url) {
-    return { ok: false, data: null, error: "This render is missing the separate intro MP4. Prepare a new MP4 render before publishing." };
+  if (render && !render.render_json?.intro_lesson_video_url && !render.render_json?.intro_video_url) {
+    return { ok: false, data: null, error: "This render is missing the lesson intro MP4. Prepare a new MP4 render before publishing." };
   }
 
   if (render && lesson.tasks.length > 0 && !hasSplitTaskVideos(render)) {
@@ -401,6 +415,21 @@ export async function publishReviewedLesson(
 
   if (lessonUpdateError) return { ok: false, data: null, error: lessonUpdateError.message };
 
+  const { data: verifiedLessonRow, error: verifiedLessonError } = await supabase
+    .from("lessons")
+    .select("current_version_id, updated_at")
+    .eq("id", lessonRow.id)
+    .single();
+
+  if (verifiedLessonError) return { ok: false, data: null, error: verifiedLessonError.message };
+  if (verifiedLessonRow.current_version_id !== lessonVersion.id) {
+    return {
+      ok: false,
+      data: null,
+      error: "Publish verification failed: the lesson current version did not update.",
+    };
+  }
+
   const { data: quizRow, error: quizError } = await supabase
     .from("quizzes")
     .upsert({ lesson_id: lessonRow.id, updated_at: new Date().toISOString() }, { onConflict: "lesson_id" })
@@ -430,6 +459,21 @@ export async function publishReviewedLesson(
 
   if (quizUpdateError) return { ok: false, data: null, error: quizUpdateError.message };
 
+  const { data: verifiedQuizRow, error: verifiedQuizError } = await supabase
+    .from("quizzes")
+    .select("current_version_id, updated_at")
+    .eq("id", quizRow.id)
+    .single();
+
+  if (verifiedQuizError) return { ok: false, data: null, error: verifiedQuizError.message };
+  if (verifiedQuizRow.current_version_id !== quizVersion.id) {
+    return {
+      ok: false,
+      data: null,
+      error: "Publish verification failed: the quiz current version did not update.",
+    };
+  }
+
   if (lesson.generated_lesson_id) {
     const { error } = await supabase
       .from("generated_lessons")
@@ -458,11 +502,17 @@ export async function publishReviewedLesson(
     data: {
       module_id: moduleRow.id,
       lesson_id: lessonRow.id,
+      module_key: normalizedTarget.module_key,
+      lesson_key: normalizedTarget.lesson_key,
       lesson_version_id: lessonVersion.id,
       lesson_version_number: lessonVersion.version_number,
+      lesson_current_version_id: verifiedLessonRow.current_version_id,
+      lesson_updated_at: verifiedLessonRow.updated_at,
       quiz_id: quizRow.id,
       quiz_version_id: quizVersion.id,
       quiz_version_number: quizVersion.version_number,
+      quiz_current_version_id: verifiedQuizRow.current_version_id,
+      quiz_updated_at: verifiedQuizRow.updated_at,
       lesson_url: `/learn/${normalizedTarget.module_key}/${normalizedTarget.lesson_key}`,
     },
     error: null,

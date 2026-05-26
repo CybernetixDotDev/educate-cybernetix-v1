@@ -2,6 +2,7 @@
 
 import type { MentorMode } from "@/hooks/useMentor";
 import { useMentor } from "@/hooks/useMentor";
+import { MENTOR_IDENTITY } from "@/lib/mentor/identity";
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 
@@ -48,10 +49,16 @@ export function MentorInlinePanel({
   return (
     <aside className="rounded-3xl border border-teal-100 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-black uppercase tracking-wide text-teal-700">Your coach</p>
-          <h2 className="mt-1 text-xl font-black text-slate-950">Cyber Mentor</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">Ask for a hint, a metaphor, or one small next step.</p>
+        <div className="flex gap-3">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-teal-50 ring-1 ring-teal-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={MENTOR_IDENTITY.poses.curious} alt="Zylo" className="h-full w-full object-contain p-1" />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-teal-700">Your coach</p>
+            <h2 className="mt-1 text-xl font-black text-slate-950">{MENTOR_IDENTITY.name}</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500">Ask for a hint, a metaphor, or one small next step.</p>
+          </div>
         </div>
         <Link
           href="/mentor"

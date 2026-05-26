@@ -73,22 +73,18 @@ function escapeXml(value: string) {
 
 function buildThumbnailSvg(storyboard: LessonStoryboard, lesson: LessonGeneratorOutput) {
   const title = escapeXml(storyboard.title || "Lesson");
-  const subtitle = escapeXml(lesson.objective[0] ?? "A guided Cyber Mentor lesson");
+  const subtitle = escapeXml(lesson.objective[0] ?? "A guided Zylo lesson");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
   <rect width="1280" height="720" fill="#f7faf9"/>
   <rect x="72" y="72" width="1136" height="576" rx="40" fill="#ffffff" stroke="#dbe7e4" stroke-width="2"/>
   <circle cx="164" cy="160" r="44" fill="#0f766e"/>
   <text x="164" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#ffffff">C</text>
-  <text x="240" y="154" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#0f766e">Cyber Mentor Lesson</text>
+  <text x="240" y="154" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#0f766e">Zylo Lesson</text>
   <text x="120" y="330" font-family="Arial, sans-serif" font-size="58" font-weight="800" fill="#0f172a">${title}</text>
   <text x="120" y="405" font-family="Arial, sans-serif" font-size="28" fill="#475569">${subtitle}</text>
   <rect x="120" y="520" width="310" height="64" rx="32" fill="#0f766e"/>
   <text x="275" y="562" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff">Start Learning</text>
 </svg>`;
-}
-
-function normalizeComparable(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
 function sceneTaskIndex(scene: LessonStoryboard["scenes"][number], lesson: LessonGeneratorOutput) {
@@ -98,37 +94,17 @@ function sceneTaskIndex(scene: LessonStoryboard["scenes"][number], lesson: Lesso
     return index >= 0 && index < lesson.tasks.length ? index : null;
   }
 
-  const sceneText = normalizeComparable(`${scene.scene_id} ${scene.title} ${scene.on_screen_text}`);
-  const matchIndex = lesson.tasks.findIndex((task) => {
-    const taskTitle = normalizeComparable(task.title);
-    const taskId = normalizeComparable(task.task_id);
-    return (taskTitle.length > 0 && sceneText.includes(taskTitle)) || (taskId.length > 0 && sceneText.includes(taskId));
-  });
-
-  return matchIndex >= 0 ? matchIndex : null;
+  return null;
 }
 
 function classifyStoryboardScenes(storyboard: LessonStoryboard, lesson: LessonGeneratorOutput) {
-  let nextChecklistTask = 0;
-
   return storyboard.scenes.map((scene, index) => {
     const explicitTaskIndex = sceneTaskIndex(scene, lesson);
     if (explicitTaskIndex !== null) {
-      nextChecklistTask = Math.max(nextChecklistTask, explicitTaskIndex + 1);
       return {
         kind: "task" as const,
         task_index: explicitTaskIndex,
         task_id: lesson.tasks[explicitTaskIndex]?.task_id,
-      };
-    }
-
-    if (scene.visual_type === "checklist_slide" && nextChecklistTask < lesson.tasks.length) {
-      const taskIndex = nextChecklistTask;
-      nextChecklistTask += 1;
-      return {
-        kind: "task" as const,
-        task_index: taskIndex,
-        task_id: lesson.tasks[taskIndex]?.task_id,
       };
     }
 

@@ -1,3 +1,5 @@
+import { MENTOR_IDENTITY, ZYLO_SYSTEM_PROMPT_BLOCK } from "@/lib/mentor/identity";
+
 export type MentorMode =
   | "teacher"
   | "quiz"
@@ -38,8 +40,16 @@ export function compileMentorPrompt(request: MentorRequest) {
   };
 
   return [
-    "You are responding as Cyber Mentor, the single student-facing AI mentor for Educate Cybernetix.",
+    `You are responding as ${MENTOR_IDENTITY.systemName}.`,
+    `Your student-facing name is ${MENTOR_IDENTITY.name}.`,
+    ZYLO_SYSTEM_PROMPT_BLOCK,
     "Students should experience one helpful mentor, even though the platform routes internally to specialist modes.",
+    "Speak in first person as Zylo when it feels natural, but do not overdo your name.",
+    "Your personality: warm, curious, playful, practical, and calm under pressure.",
+    "Use simple explanations, relatable metaphors, and small next steps.",
+    "When a student is stuck, reduce anxiety first, then give a clear plan.",
+    "Do not dump long lectures. Prefer: quick explanation, example, next action.",
+    "Celebrate genuine progress briefly. Never shame mistakes.",
     specialistGuidance[request.mode],
     "",
     "GLOBAL AI CONFIG:",

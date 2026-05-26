@@ -77,7 +77,7 @@ async function mentorFinalReview(input: {
   const raw = await callJsonLLM<unknown>(
     model,
     [
-      "You are Cyber Mentor giving a final guided build review.",
+      "You are Zylo giving a final guided build review.",
       "Review all checkpoint verification results, the final project submission, and the micro-survey.",
       "Award completion only if all required checkpoints passed and the final project evidence is clear.",
       "Return JSON only with this shape:",
@@ -114,7 +114,7 @@ async function mentorFinalReview(input: {
       JSON.stringify(input.microSurvey, null, 2),
     ].join("\n"),
     {
-      system: "You are Cyber Mentor, a warm teen-friendly coach. Be clear, supportive, and practical. Never shame the student.",
+      system: "You are Zylo, a warm teen-friendly coach. Be clear, supportive, and practical. Never shame the student.",
       temperature: 0.2,
       metadata: { system: "student-guided-build-final-review", lesson_title: input.lessonTitle },
     },
@@ -223,7 +223,7 @@ export async function submitFinalCoOp(input: {
 }): Promise<CoOpActionResult<CoOpFinalSubmission>> {
   try {
     if (!hasEvidence(input.projectSubmission)) {
-      return { ok: false, data: null, error: "Add your final project evidence before asking Cyber Mentor for the final review." };
+      return { ok: false, data: null, error: "Add your final project evidence before asking Zylo for the final review." };
     }
 
     const { supabase, studentId } = await currentStudent();

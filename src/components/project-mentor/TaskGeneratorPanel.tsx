@@ -53,7 +53,7 @@ export function TaskGeneratorPanel({
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div>
-        <p className="text-sm font-bold uppercase tracking-wide text-teal-700">Cyber Mentor Planning</p>
+        <p className="text-sm font-bold uppercase tracking-wide text-teal-700">Zylo Planning</p>
         <h2 className="mt-1 text-2xl font-black text-slate-950">Create the next build steps</h2>
         <p className="mt-1 text-sm text-slate-500">Preview the plan, make changes, then save it to your mission board.</p>
       </div>

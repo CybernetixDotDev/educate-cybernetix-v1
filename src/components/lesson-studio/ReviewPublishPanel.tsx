@@ -1,6 +1,7 @@
 "use client";
 
 import { publishReviewedLesson, saveReviewEdits, setLessonReviewStatus } from "@/lib/lesson-studio/reviewPublish";
+import type { PublishStatus } from "@/components/lesson-studio/PublishStatusPanel";
 import type { LessonBrief, LessonGeneratorOutput, LessonRender, LessonReviewStatus, LessonStoryboard, PublishTarget } from "@/lib/lesson-studio/types";
 import { useMemo, useState } from "react";
 
@@ -13,6 +14,7 @@ type ReviewPublishPanelProps = {
   onStoryboardChange: (storyboard: LessonStoryboard | null) => void;
   onStatus: (message: string) => void;
   onError: (message: string) => void;
+  onPublished?: (status: PublishStatus) => void;
 };
 
 type ActionConfirmation = {
@@ -79,6 +81,7 @@ export function ReviewPublishPanel({
   onStoryboardChange,
   onStatus,
   onError,
+  onPublished,
 }: ReviewPublishPanelProps) {
   const [lessonText, setLessonText] = useState(() => JSON.stringify(lesson, null, 2));
   const [storyboardText, setStoryboardText] = useState(() => JSON.stringify(storyboard, null, 2));
@@ -90,10 +93,11 @@ export function ReviewPublishPanel({
   const [confirmation, setConfirmation] = useState<ActionConfirmation | null>(null);
 
   const canReview = Boolean(lesson);
+  const renderAssetsComplete = Boolean(render?.status === "completed" || (render?.mp4_url && render.render_json?.local_renderer_completed));
   const renderHasSplitVideos = Boolean(
-    render?.status === "completed" &&
-      render.render_json?.intro_video_url &&
-      render.render_json?.scene_video_urls?.some((scene) => scene.kind === "task" && scene.url),
+    renderAssetsComplete &&
+      (render?.render_json?.intro_lesson_video_url || render?.render_json?.intro_video_url) &&
+      render?.render_json?.scene_video_urls?.some((scene) => scene.kind === "task" && scene.url),
   );
   const renderWarning = render && !renderHasSplitVideos
     ? "This render is not ready to publish. It must include a separate intro video and separate task videos."
@@ -194,6 +198,7 @@ export function ReviewPublishPanel({
       return;
     }
     setBusy(true);
+    onStatus(`Publishing to /learn/${target.module_key}/${target.lesson_key}...`);
     try {
       const result = await publishReviewedLesson(parsedLesson, storyboard, target, render);
       if (!result.ok || !result.data) {
@@ -211,6 +216,22 @@ export function ReviewPublishPanel({
         lessonUrl: result.data.lesson_url,
         lessonVersion: result.data.lesson_version_number,
         quizVersion: result.data.quiz_version_number,
+      });
+      onPublished?.({
+        lessonUrl: result.data.lesson_url,
+        lessonVersionNumber: result.data.lesson_version_number,
+        quizVersionNumber: result.data.quiz_version_number,
+        lessonVersionId: result.data.lesson_version_id,
+        quizVersionId: result.data.quiz_version_id,
+        moduleId: result.data.module_id,
+        lessonId: result.data.lesson_id,
+        lessonCurrentVersionId: result.data.lesson_current_version_id,
+        lessonUpdatedAt: result.data.lesson_updated_at,
+        quizCurrentVersionId: result.data.quiz_current_version_id,
+        quizUpdatedAt: result.data.quiz_updated_at,
+        moduleKey: result.data.module_key,
+        lessonKey: result.data.lesson_key,
+        publishedAt: new Date().toLocaleString(),
       });
       onStatus(`Published to student lessons: ${result.data.lesson_url}`);
     } finally {
@@ -299,6 +320,11 @@ export function ReviewPublishPanel({
             {renderWarning ?? "This publish will attach the separate intro, lesson walkthrough, and task MP4s to the student lesson."}
           </div>
         )}
+        {!render?.mp4_url && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900 lg:col-span-2">
+            No MP4 render is selected. Publishing without a render is allowed, but the student lesson will not include generated videos.
+          </div>
+        )}
         <Input label="Course key" value={target.course_key ?? ""} onChange={(course_key) => setTarget({ ...target, course_key })} />
         <Input label="Module key" value={target.module_key} onChange={(module_key) => setTarget({ ...target, module_key })} />
         <Input label="Lesson key" value={target.lesson_key} onChange={(lesson_key) => setTarget({ ...target, lesson_key })} />
@@ -344,6 +370,11 @@ export function ReviewPublishPanel({
           {busy ? "Publishing..." : "Publish to Student Lessons"}
         </button>
       </div>
+      {renderWarning && (
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
+          Publish is blocked: {renderWarning}
+        </p>
+      )}
     </section>
   );
 }

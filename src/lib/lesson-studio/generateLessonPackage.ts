@@ -11,6 +11,7 @@ import type {
   LessonGeneratorOutput,
   LessonStudioActionResult,
   LessonTask,
+  TeachingSequence,
 } from "@/lib/lesson-studio/types";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -29,6 +30,49 @@ Output exactly this JSON shape:
   "hook": "",
   "objective": [],
   "teaching_steps": [],
+  "teaching_sequence": {
+    "cinematic_hook": {
+      "title": "",
+      "body": "",
+      "visual_prompt": ""
+    },
+    "why_it_matters": {
+      "title": "",
+      "body": "",
+      "relatable_example": ""
+    },
+    "mental_model": {
+      "title": "",
+      "body": "",
+      "metaphor": "",
+      "diagram_prompt": ""
+    },
+    "i_do": {
+      "title": "",
+      "steps": [],
+      "example": ""
+    },
+    "we_do": {
+      "title": "",
+      "steps": [],
+      "guided_prompt": ""
+    },
+    "you_do": {
+      "title": "",
+      "instruction": "",
+      "expected_output": ""
+    },
+    "common_mistake": {
+      "title": "",
+      "mistake": "",
+      "fix": ""
+    },
+    "recap": {
+      "title": "",
+      "bullets": [],
+      "next_step": ""
+    }
+  },
   "build_task": {},
   "checkpoint": [],
   "recap": "",
@@ -117,6 +161,9 @@ Output exactly this JSON shape:
 
 Every lesson MUST contain 5-7 co_op_tasks.
 Every lesson MUST also contain a matching first-class tasks array with 5-7 task objects.
+Every lesson MUST include teaching_sequence before tasks. It must teach the concept with: cinematic hook, why it matters, mental model, I do, we do, you do, common mistake, recap.
+teaching_sequence MUST be more detailed than headings. Use relatable examples, step-by-step explanation, concrete visuals, and simple language for ages 8-21.
+The teaching_sequence should prepare the student for the guided tasks, not replace the tasks.
 Each tasks item MUST include task_id, title, instruction, video_url, action, checkpoint_types, checkpoint_type, and ai_verification_criteria.
 Each checkpoint_types array MUST include one or more of: screenshot, file, link, text. checkpoint_type MUST equal the first checkpoint_types value for backward compatibility.
 The quiz MUST contain the exact number of questions requested in the Lesson Brief. Do not return an empty quiz.
@@ -450,6 +497,93 @@ function normalizeFinalSubmission(value: unknown, tasks: LessonTask[], brief: Le
   };
 }
 
+function normalizeTeachingSequence(value: unknown, brief: LessonBrief, record: Record<string, unknown>): TeachingSequence {
+  const sequence = isRecord(value) ? value : {};
+  const section = (key: keyof TeachingSequence) => isRecord(sequence[key]) ? sequence[key] as Record<string, unknown> : {};
+  const objectives = stringArray(record.objective).length > 0 ? stringArray(record.objective) : brief.learning_objectives;
+  const teachingSteps = stringArray(record.teaching_steps);
+  const checkpoints = stringArray(record.checkpoint);
+  const buildTask = isRecord(record.build_task) ? record.build_task : {};
+  const firstRequirement = brief.hands_on_task_requirements?.[0];
+
+  const cinematicHook = section("cinematic_hook");
+  const whyItMatters = section("why_it_matters");
+  const mentalModel = section("mental_model");
+  const iDo = section("i_do");
+  const weDo = section("we_do");
+  const youDo = section("you_do");
+  const commonMistake = section("common_mistake");
+  const recap = section("recap");
+
+  return {
+    cinematic_hook: {
+      title: stringValue(cinematicHook.title, "Start with the real-world moment"),
+      body: stringValue(
+        cinematicHook.body,
+        stringValue(record.hook, `Imagine using ${brief.lesson_title} to create something you can actually show someone.`),
+      ),
+      visual_prompt: stringValue(cinematicHook.visual_prompt) || `Create a cinematic visual that introduces ${brief.lesson_title}.`,
+    },
+    why_it_matters: {
+      title: stringValue(whyItMatters.title, "Why this matters"),
+      body: stringValue(
+        whyItMatters.body,
+        objectives[0]
+          ? `This matters because it helps you ${objectives[0].toLowerCase().replace(/[.?!]$/g, "")}.`
+          : `This matters because it turns ${brief.subject_area} into something practical you can build.`,
+      ),
+      relatable_example: stringValue(whyItMatters.relatable_example) || brief.required_project_outcome,
+    },
+    mental_model: {
+      title: stringValue(mentalModel.title, "The simple mental model"),
+      body: stringValue(
+        mentalModel.body,
+        `Think of ${brief.lesson_title} as a small system: one part starts the action, another part responds, and your job is to understand how the pieces connect.`,
+      ),
+      metaphor: stringValue(mentalModel.metaphor) || "Like following a recipe: each step has a job, and the final result only works when the steps connect.",
+      diagram_prompt: stringValue(mentalModel.diagram_prompt) || `Draw the main parts of ${brief.lesson_title} and show how they connect with arrows.`,
+    },
+    i_do: {
+      title: stringValue(iDo.title, "I do: watch the first move"),
+      steps: stringArray(iDo.steps).length > 0
+        ? stringArray(iDo.steps)
+        : (teachingSteps.length > 0 ? teachingSteps.slice(0, 4) : [`Watch how to approach ${brief.lesson_title} one step at a time.`]),
+      example: stringValue(iDo.example) || firstRequirement?.expected_output || brief.required_project_outcome,
+    },
+    we_do: {
+      title: stringValue(weDo.title, "We do: try it together"),
+      steps: stringArray(weDo.steps).length > 0
+        ? stringArray(weDo.steps)
+        : (checkpoints.length > 0 ? checkpoints.slice(0, 4) : ["Pause, check the key parts, and explain what each part does in your own words."]),
+      guided_prompt: stringValue(weDo.guided_prompt) || "Use Zylo if one step feels unclear before moving on.",
+    },
+    you_do: {
+      title: stringValue(youDo.title, "You do: build your version"),
+      instruction: stringValue(
+        youDo.instruction,
+        firstRequirement?.student_action || stringValue(buildTask.expected_outcome, brief.required_project_outcome),
+      ),
+      expected_output: stringValue(youDo.expected_output) || firstRequirement?.expected_output || brief.required_project_outcome,
+    },
+    common_mistake: {
+      title: stringValue(commonMistake.title, "Common mistake to avoid"),
+      mistake: stringValue(commonMistake.mistake, "Trying to finish the task before you can explain what the main parts are doing."),
+      fix: stringValue(commonMistake.fix, "Slow down, name each part, then do the next small step."),
+    },
+    recap: {
+      title: stringValue(recap.title, "Quick recap"),
+      bullets: stringArray(recap.bullets).length > 0
+        ? stringArray(recap.bullets)
+        : [
+            objectives[0] ?? `You learned the main idea behind ${brief.lesson_title}.`,
+            `You connected the idea to a visible project outcome: ${brief.required_project_outcome}.`,
+            "You are ready to complete the guided build tasks.",
+          ],
+      next_step: stringValue(recap.next_step) || stringValue(record.next_step, "Start Task 1 and submit proof when it is complete."),
+    },
+  };
+}
+
 function normalizeLessonPackage(value: unknown, brief: LessonBrief): LessonGeneratorOutput {
   const record = isRecord(value) ? value : {};
   const buildTask = isRecord(record.build_task) ? record.build_task : {};
@@ -466,6 +600,7 @@ function normalizeLessonPackage(value: unknown, brief: LessonBrief): LessonGener
     hook: stringValue(record.hook, `Let's build ${brief.lesson_title}.`),
     objective: stringArray(record.objective).length > 0 ? stringArray(record.objective) : brief.learning_objectives,
     teaching_steps: stringArray(record.teaching_steps),
+    teaching_sequence: normalizeTeachingSequence(record.teaching_sequence, brief, record),
     build_task: {
       title: stringValue(buildTask.title, brief.required_project_outcome),
       instructions: stringArray(buildTask.instructions),

@@ -167,6 +167,8 @@ async function callRenderer(renderId) {
 
 async function completeJob(job, result) {
   const logs = Array.isArray(job.logs) ? job.logs : [];
+  const render = result?.render;
+  const renderCompleted = render?.status === "completed" || Boolean(render?.mp4_url && render?.render_json?.local_renderer_completed);
   const { error } = await supabase
     .from("lesson_render_queue")
     .update({
@@ -180,6 +182,19 @@ async function completeJob(job, result) {
     .eq("id", job.id);
 
   if (error) throw new Error(error.message);
+
+  if (renderCompleted) {
+    const { error: renderUpdateError } = await supabase
+      .from("lesson_renders")
+      .update({
+        status: "completed",
+        error_message: null,
+        updated_at: nowIso(),
+      })
+      .eq("id", job.render_id);
+
+    if (renderUpdateError) throw new Error(renderUpdateError.message);
+  }
 }
 
 async function failOrRetryJob(job, error) {

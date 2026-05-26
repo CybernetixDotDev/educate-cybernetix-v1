@@ -34,18 +34,18 @@ export function RecommendedActions({
         }
       : {
           title: "Create your build plan",
-          body: "Ask Cyber Mentor to turn your course topic into a simple project task list.",
+          body: "Ask Zylo to turn your course topic into a simple project task list.",
           href: "/mentor?intent=project",
         },
     lastQuiz && Number(lastQuiz.score) < 80
       ? {
           title: "Review the checkpoint",
-          body: `Your last score was ${Math.round(Number(lastQuiz.score))}%. Ask Cyber Mentor to explain the missed ideas.`,
+          body: `Your last score was ${Math.round(Number(lastQuiz.score))}%. Ask Zylo to explain the missed ideas.`,
           href: "/mentor",
         }
       : {
-          title: hasMentor ? "Ask one useful question" : "Meet Cyber Mentor",
-          body: "Bring one stuck point from the lesson or project. Cyber Mentor will choose the right help mode.",
+          title: hasMentor ? "Ask one useful question" : "Meet Zylo",
+          body: "Bring one stuck point from the lesson or project. Zylo will choose the right help mode.",
           href: "/mentor",
         },
   ];

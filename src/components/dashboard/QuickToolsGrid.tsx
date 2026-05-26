@@ -20,7 +20,7 @@ const PRIMARY_ACTIONS = [
   {
     href: "/mentor",
     eyebrow: "Any time",
-    title: "Ask Cyber Mentor",
+    title: "Ask Zylo",
     description: "Get help with the lesson, project, debugging, code review, quiz prep, or presentation practice.",
     cta: "Ask for help",
   },
@@ -40,7 +40,7 @@ export function QuickToolsGrid() {
           <h2 className="mt-1 text-2xl font-black text-slate-950">Learn, build, ask when stuck</h2>
         </div>
         <p className="max-w-xl text-sm leading-6 text-slate-600">
-          Cyber Mentor is one assistant behind the scenes. You do not need to choose a separate debugging, review, or presentation tool.
+          Zylo is one assistant behind the scenes. You do not need to choose a separate debugging, review, or presentation tool.
         </p>
       </div>
 

@@ -87,7 +87,7 @@ function normalizeCertificate(value: unknown, input: CertificateInput): Certific
       title: typeof text.title === "string" ? text.title : "Certificate of Completion",
       subtitle: typeof text.subtitle === "string" ? text.subtitle : "Educate Cybernetix Web Development Program",
       completion_date: typeof text.completion_date === "string" ? text.completion_date : new Date().toISOString().slice(0, 10),
-      mentor_signature: typeof text.mentor_signature === "string" ? text.mentor_signature : "Educate Cybernetix AI Mentor",
+      mentor_signature: typeof text.mentor_signature === "string" ? text.mentor_signature : "Zylo, Educate Cybernetix AI Mentor",
     },
     skill_map: {
       html: score(skill.html),

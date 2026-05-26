@@ -1,5 +1,6 @@
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { dashboardPathForRole, getCurrentUserRole } from "@/lib/auth/roles";
+import { MENTOR_IDENTITY } from "@/lib/mentor/identity";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -37,7 +38,7 @@ const steps = [
     body: "Short lessons, videos, diagrams, examples, and checkpoints keep momentum high.",
   },
   {
-    title: "Build with Cyber Mentor",
+    title: "Build with Zylo",
     body: "The mentor explains, guides, debugs, reviews, and encourages without overwhelming the student.",
   },
   {
@@ -92,14 +93,14 @@ export default async function LandingPage() {
           </div>
         </nav>
 
-        <div className="mx-auto flex max-w-7xl px-5 pb-24 pt-20 sm:px-6 lg:px-8 lg:pb-28 lg:pt-28">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 pb-24 pt-20 sm:px-6 lg:grid-cols-[1fr_22rem] lg:px-8 lg:pb-28 lg:pt-28">
           <div className="max-w-3xl text-white">
             <p className="text-sm font-black uppercase tracking-[0.22em] text-teal-200">AI-guided tech courses for teens</p>
             <h1 className="mt-5 text-5xl font-black leading-[0.95] tracking-tight sm:text-7xl">
               Real-world tech learning that feels personal.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-white/85">
-              Students learn in short, friendly lessons, build visible projects, and get supportive help from Cyber Mentor whenever they are stuck.
+              Students learn in short, friendly lessons, build visible projects, and get supportive help from Zylo whenever they are stuck.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href={primaryHref} className="rounded-full bg-teal-400 px-6 py-4 text-center text-sm font-black text-slate-950 shadow-lg shadow-slate-950/20 transition hover:bg-teal-300">
@@ -115,6 +116,13 @@ export default async function LandingPage() {
                   {item}
                 </span>
               ))}
+            </div>
+          </div>
+          <div className="hidden items-end justify-center lg:flex">
+            <div className="rounded-[2rem] border border-white/25 bg-white/15 p-5 shadow-2xl backdrop-blur">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={MENTOR_IDENTITY.poses.waving} alt="Zylo" className="h-72 w-72 object-contain" />
+              <p className="mt-3 text-center text-sm font-black text-white">Meet {MENTOR_IDENTITY.name}</p>
             </div>
           </div>
         </div>
@@ -188,7 +196,7 @@ export default async function LandingPage() {
                 <div className="h-full w-2/3 rounded-full bg-teal-500" />
               </div>
               <div className="mt-5 space-y-3">
-                {["Watch the intro", "Complete a micro-lesson", "Ask Cyber Mentor", "Showcase the project"].map((task) => (
+                {["Watch the intro", "Complete a micro-lesson", "Ask Zylo", "Showcase the project"].map((task) => (
                   <div key={task} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-sm font-bold text-slate-800">{task}</p>
                   </div>

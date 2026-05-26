@@ -8,7 +8,7 @@ type ChatInputProps = {
   onSend: (message: string) => Promise<void> | void;
 };
 
-export function ChatInput({ disabled = false, placeholder = "Ask your mentor...", onSend }: ChatInputProps) {
+export function ChatInput({ disabled = false, placeholder = "Ask Zylo...", onSend }: ChatInputProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 

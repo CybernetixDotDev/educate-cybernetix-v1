@@ -15,10 +15,10 @@ export default function AuthPage() {
             Welcome back to your next mission.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-            Sign in to continue your course, build your project, and ask Cyber Mentor for help when you need a clear next step.
+            Sign in to continue your course, build your project, and ask Zylo for help when you need a clear next step.
           </p>
           <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
-            {["Short lessons", "Cyber Mentor", "Visible projects"].map((item) => (
+            {["Short lessons", "Zylo", "Visible projects"].map((item) => (
               <div key={item} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-sm font-black">{item}</p>
               </div>

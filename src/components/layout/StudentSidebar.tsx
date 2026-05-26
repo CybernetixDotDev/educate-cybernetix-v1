@@ -41,7 +41,7 @@ export const STUDENT_NAV_ITEMS: StudentNavItem[] = [
   },
   {
     href: "/mentor",
-    label: "Cyber Mentor",
+    label: "Zylo",
     description: "Ask for help with anything",
     icon: <Icon><path d="M12 3v3" /><path d="M5 8h14v10a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V8Z" /><path d="M9 13h.01" /><path d="M15 13h.01" /></Icon>,
   },

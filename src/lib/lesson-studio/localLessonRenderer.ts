@@ -29,6 +29,20 @@ function ffmpegPath() {
   return process.env.FFMPEG_PATH || "ffmpeg";
 }
 
+function zyloImagePath(scene?: RenderManifest["slide_manifest"][number]) {
+  const fileName = scene?.scene_id === "common-mistake"
+    ? "zylo_confused_expression.png"
+    : scene?.scene_id === "i-do" || scene?.scene_id === "we-do" || scene?.scene_id === "you-do"
+      ? "zylo_pointing_pose.png"
+      : scene?.video_kind === "task"
+        ? "zylo_pointing_pose.png"
+      : scene?.visual_type === "recap_slide"
+        ? "zylo_celebrating_pose.png"
+        : "zylo_waving_pose.png";
+
+  return path.join(process.cwd(), "public", "zylo", fileName);
+}
+
 function escapeXml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -74,7 +88,7 @@ function sceneSvg(scene: RenderManifest["slide_manifest"][number], index: number
   ${lineMarkup}
   <circle cx="1098" cy="536" r="64" fill="#ccfbf1"/>
   <text x="1098" y="554" text-anchor="middle" font-family="Arial, sans-serif" font-size="46" font-weight="900" fill="#0f766e">${index + 1}</text>
-  <text x="104" y="606" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#0f766e">Cyber Mentor</text>
+  <text x="104" y="606" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#0f766e">Zylo</text>
 </svg>`;
 }
 
@@ -197,7 +211,7 @@ function iconGlyph(icon?: string) {
     case "project":
       return "DIY";
     case "mentor":
-      return "AI";
+      return "ZY";
     default:
       return "IDEA";
   }
@@ -223,7 +237,7 @@ function commonFrame(scene: RenderManifest["slide_manifest"][number], index: num
     "drawbox=x=0:y=0:w=1280:h=720:color=f7faf9:t=fill",
     "drawbox=x=54:y=46:w=1172:h=628:color=white:t=fill",
     `drawbox=x=86:y=82:w=250:h=48:color=${accent}:t=fill`,
-    "drawtext=text='CYBER MENTOR':x=112:y=99:fontsize=18:fontcolor=white",
+    "drawtext=text='ZYLO':x=112:y=99:fontsize=18:fontcolor=white",
     `drawtext=text='${title}':x=86:y=178:fontsize=48:fontcolor=0f172a`,
     `drawtext=text='${index + 1}':x=1130:y=596:fontsize=44:fontcolor=${accent}`,
   ];
@@ -288,6 +302,87 @@ function cardFilters(scene: RenderManifest["slide_manifest"][number], index: num
   return filters;
 }
 
+function cinematicStoryFilters(scene: RenderManifest["slide_manifest"][number]) {
+  const lines = wrapText(scene.on_screen_text || scene.title, 42).slice(0, 4);
+  const isIntro = scene.scene_id === "intro";
+  const accent = isIntro ? "0f766e" : "2563eb";
+
+  return [
+    "drawbox=x=0:y=0:w=1280:h=720:color=ecfeff:t=fill",
+    "drawbox=x=0:y=0:w=1280:h=720:color=f7faf9@0.72:t=fill",
+    `drawbox=x=72:y=72:w=1136:h=576:color=white:t=fill`,
+    `drawbox=x=720:y=0:w=560:h=720:color=${isIntro ? "ccfbf1" : "dbeafe"}:t=fill`,
+    `drawbox=x=820:y=160:w=280:h=280:color=${accent}:t=fill`,
+    "drawtext=text='ZYLO':x=902:y=340:fontsize=64:fontcolor=white",
+    `drawbox=x=104:y=104:w=250:h=48:color=${accent}:t=fill`,
+    `drawtext=text='${isIntro ? "HOOK" : "WHY IT MATTERS"}':x=132:y=134:fontsize=18:fontcolor=white`,
+    `drawtext=text='${filterText(scene.title || "Start here", 52)}':x=104:y=220:fontsize=54:fontcolor=0f172a`,
+    ...lines.map((line, lineIndex) => `drawtext=text='${filterText(line, 54)}':x=106:y=${330 + lineIndex * 48}:fontsize=30:fontcolor=334155`),
+    `drawbox=x=104:y=562:w=360:h=58:color=${accent}:t=fill`,
+    `drawtext=text='${isIntro ? "Watch the idea first" : "Connect it to real life"}':x=132:y=598:fontsize=23:fontcolor=white`,
+    "format=yuv420p",
+  ];
+}
+
+function metaphorDiagramFilters(scene: RenderManifest["slide_manifest"][number], index: number) {
+  const lines = wrapText(scene.on_screen_text || scene.title, 46).slice(0, 3);
+  const filters = [
+    ...commonFrame(scene, index, "2563eb"),
+    "drawbox=x=104:y=286:w=210:h=132:color=dbeafe:t=fill",
+    "drawbox=x=424:y=286:w=210:h=132:color=ccfbf1:t=fill",
+    "drawbox=x=744:y=286:w=210:h=132:color=ede9fe:t=fill",
+    "drawbox=x=316:y=345:w=106:h=8:color=14b8a6:t=fill",
+    "drawtext=text='>':x=400:y=365:fontsize=28:fontcolor=14b8a6",
+    "drawbox=x=636:y=345:w=106:h=8:color=14b8a6:t=fill",
+    "drawtext=text='>':x=720:y=365:fontsize=28:fontcolor=14b8a6",
+    "drawtext=text='START':x=150:y=364:fontsize=30:fontcolor=1d4ed8",
+    "drawtext=text='FLOW':x=482:y=364:fontsize=30:fontcolor=0f766e",
+    "drawtext=text='RESULT':x=780:y=364:fontsize=30:fontcolor=7c3aed",
+    ...lines.map((line, lineIndex) => `drawtext=text='${filterText(line, 62)}':x=104:y=${500 + lineIndex * 34}:fontsize=22:fontcolor=334155`),
+    "drawtext=text='Mental model: understand the path before you build.':x=104:y=622:fontsize=22:fontcolor=2563eb",
+    "format=yuv420p",
+  ];
+
+  return filters;
+}
+
+function demoFilters(scene: RenderManifest["slide_manifest"][number], index: number) {
+  const lines = wrapText(scene.on_screen_text || scene.title, 44).slice(0, 5);
+  const label = scene.scene_id === "i-do" ? "I DO" : scene.scene_id === "we-do" ? "WE DO" : "YOU DO";
+  const accent = scene.scene_id === "you-do" ? "0f766e" : "7c3aed";
+
+  return [
+    ...commonFrame(scene, index, accent),
+    "drawbox=x=104:y=260:w=500:h=320:color=111827:t=fill",
+    "drawbox=x=104:y=260:w=500:h=44:color=1f2937:t=fill",
+    `drawtext=text='${label} DEMO':x=132:y=288:fontsize=18:fontcolor=e5e7eb`,
+    ...lines.map((line, lineIndex) => `drawtext=text='${filterText(line, 52)}':x=134:y=${350 + lineIndex * 38}:fontsize=24:fontcolor=d1fae5`),
+    `drawbox=x=704:y=292:w=320:h=82:color=${scene.scene_id === "you-do" ? "ccfbf1" : "ede9fe"}:t=fill`,
+    `drawtext=text='1. Watch':x=736:y=342:fontsize=28:fontcolor=${accent}`,
+    "drawbox=x=704:y=396:w=320:h=82:color=f1f5f9:t=fill",
+    "drawtext=text='2. Try one step':x=736:y=446:fontsize=28:fontcolor=0f172a",
+    "drawbox=x=704:y=500:w=320:h=82:color=f1f5f9:t=fill",
+    "drawtext=text='3. Submit proof':x=736:y=550:fontsize=28:fontcolor=0f172a",
+    "format=yuv420p",
+  ];
+}
+
+function mistakeFilters(scene: RenderManifest["slide_manifest"][number], index: number) {
+  const lines = wrapText(scene.on_screen_text || scene.title, 40).slice(0, 5);
+
+  return [
+    ...commonFrame(scene, index, "dc2626"),
+    "drawbox=x=110:y=270:w=450:h=260:color=fee2e2:t=fill",
+    "drawbox=x=720:y=270:w=450:h=260:color=dcfce7:t=fill",
+    "drawtext=text='MISTAKE':x=238:y=338:fontsize=42:fontcolor=991b1b",
+    "drawtext=text='FIX':x=884:y=338:fontsize=42:fontcolor=166534",
+    ...lines.slice(0, 3).map((line, lineIndex) => `drawtext=text='${filterText(line, 34)}':x=142:y=${410 + lineIndex * 34}:fontsize=22:fontcolor=7f1d1d`),
+    ...lines.slice(3, 5).map((line, lineIndex) => `drawtext=text='${filterText(line, 34)}':x=752:y=${410 + lineIndex * 34}:fontsize=22:fontcolor=14532d`),
+    "drawtext=text='Mistakes are clues. Use them to find the next small step.':x=118:y=608:fontsize=24:fontcolor=0f766e",
+    "format=yuv420p",
+  ];
+}
+
 function codeFilters(scene: RenderManifest["slide_manifest"][number], index: number) {
   const lines = wrapText(scene.on_screen_text || scene.title, 46).slice(0, 6);
   return [
@@ -303,6 +398,10 @@ function codeFilters(scene: RenderManifest["slide_manifest"][number], index: num
 }
 
 function drawTextFilter(scene: RenderManifest["slide_manifest"][number], index: number) {
+  if (scene.scene_id === "intro" || scene.scene_id === "why-it-matters") return cinematicStoryFilters(scene).join(",");
+  if (scene.scene_id === "mental-model") return metaphorDiagramFilters(scene, index).join(",");
+  if (scene.scene_id === "i-do" || scene.scene_id === "we-do" || scene.scene_id === "you-do") return demoFilters(scene, index).join(",");
+  if (scene.scene_id === "common-mistake") return mistakeFilters(scene, index).join(",");
   if (scene.visual_type === "title_slide") return titleFilters(scene, index).join(",");
   if (scene.visual_type === "diagram_slide") return diagramFilters(scene, index).join(",");
   if (scene.visual_type === "code_slide") return codeFilters(scene, index).join(",");
@@ -326,6 +425,8 @@ function lessonSceneIndexes(scenes: RenderManifest["slide_manifest"]) {
 }
 
 async function renderScene(scene: RenderManifest["slide_manifest"][number], index: number, audioPath: string, outputPath: string, durationSeconds: number) {
+  const slideFilter = drawTextFilter(scene, index);
+  const zyloPath = zyloImagePath(scene);
   const baseArgs = [
     "-y",
     "-f",
@@ -338,6 +439,10 @@ async function renderScene(scene: RenderManifest["slide_manifest"][number], inde
   const outputArgs = [
     "-c:v",
     "libx264",
+    "-profile:v",
+    "baseline",
+    "-level",
+    "3.1",
     "-preset",
     "veryfast",
     "-pix_fmt",
@@ -346,6 +451,8 @@ async function renderScene(scene: RenderManifest["slide_manifest"][number], inde
     "aac",
     "-b:a",
     "128k",
+    "-movflags",
+    "+faststart",
     "-shortest",
     outputPath,
   ];
@@ -353,8 +460,16 @@ async function renderScene(scene: RenderManifest["slide_manifest"][number], inde
   try {
     await execFileAsync(ffmpegPath(), [
       ...baseArgs,
-      "-vf",
-      drawTextFilter(scene, index),
+      "-loop",
+      "1",
+      "-i",
+      zyloPath,
+      "-filter_complex",
+      `[0:v]${slideFilter}[base];[2:v]scale=180:-1[zylo];[base][zylo]overlay=x=1024:y=430:format=auto,format=yuv420p[v]`,
+      "-map",
+      "[v]",
+      "-map",
+      "1:a",
       ...outputArgs,
     ]);
   } catch {
@@ -380,8 +495,22 @@ async function concatScenes(scenePaths: string[], outputPath: string, workDir: s
     "0",
     "-i",
     listPath,
-    "-c",
-    "copy",
+    "-c:v",
+    "libx264",
+    "-profile:v",
+    "baseline",
+    "-level",
+    "3.1",
+    "-preset",
+    "veryfast",
+    "-pix_fmt",
+    "yuv420p",
+    "-c:a",
+    "aac",
+    "-b:a",
+    "128k",
+    "-movflags",
+    "+faststart",
     outputPath,
   ]);
 }
@@ -477,6 +606,19 @@ export async function runLocalLessonRenderer(
       );
     }
 
+    const introLessonPaths = [...introPaths, ...lessonPaths];
+    let introLessonVideoUrl: string | undefined;
+    if (introLessonPaths.length > 0) {
+      const introLessonPath = path.join(workDir, "intro-lesson.mp4");
+      await concatScenes(introLessonPaths, introLessonPath, workDir);
+      introLessonVideoUrl = await uploadBytes(
+        supabase,
+        `${basePath}/intro-lesson.mp4`,
+        await readFile(/* turbopackIgnore: true */ introLessonPath),
+        "video/mp4",
+      );
+    }
+
     const mp4Path = path.join(workDir, "lesson.mp4");
     await concatScenes(sceneVideos, mp4Path, workDir);
     const mp4Url = await uploadBytes(supabase, manifest.mp4_output_path ?? `${basePath}/lesson.mp4`, await readFile(/* turbopackIgnore: true */ mp4Path), "video/mp4");
@@ -485,6 +627,7 @@ export async function runLocalLessonRenderer(
       slide_asset_urls: slideUrls,
       tts_audio_urls: audioUrls,
       intro_video_url: introVideoUrl,
+      intro_lesson_video_url: introLessonVideoUrl,
       lesson_video_url: lessonVideoUrl,
       scene_video_urls: sceneVideoUrls,
       local_renderer_completed: true,

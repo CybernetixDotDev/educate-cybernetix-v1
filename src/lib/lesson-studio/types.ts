@@ -116,6 +116,50 @@ export type LessonTask = {
   ai_verification_criteria: string[];
 };
 
+export type TeachingSequence = {
+  cinematic_hook: {
+    title: string;
+    body: string;
+    visual_prompt?: string;
+  };
+  why_it_matters: {
+    title: string;
+    body: string;
+    relatable_example?: string;
+  };
+  mental_model: {
+    title: string;
+    body: string;
+    metaphor?: string;
+    diagram_prompt?: string;
+  };
+  i_do: {
+    title: string;
+    steps: string[];
+    example?: string;
+  };
+  we_do: {
+    title: string;
+    steps: string[];
+    guided_prompt?: string;
+  };
+  you_do: {
+    title: string;
+    instruction: string;
+    expected_output?: string;
+  };
+  common_mistake: {
+    title: string;
+    mistake: string;
+    fix: string;
+  };
+  recap: {
+    title: string;
+    bullets: string[];
+    next_step?: string;
+  };
+};
+
 export type LessonFinalSubmission = {
   required_task_checkpoints: string[];
   final_project_upload: {
@@ -149,6 +193,7 @@ export type LessonGeneratorOutput = {
   hook: string;
   objective: string[];
   teaching_steps: string[];
+  teaching_sequence: TeachingSequence;
   build_task: {
     title?: string;
     instructions?: string[];
@@ -243,6 +288,7 @@ export type LessonRender = {
     slide_asset_urls?: string[];
     tts_audio_urls?: string[];
     intro_video_url?: string;
+    intro_lesson_video_url?: string;
     lesson_video_url?: string;
     scene_video_urls?: Array<{
       scene_id: string;
@@ -290,11 +336,17 @@ export type PublishTarget = {
 export type PublishResult = {
   module_id: string;
   lesson_id: string;
+  module_key: string;
+  lesson_key: string;
   lesson_version_id: string;
   lesson_version_number: number;
+  lesson_current_version_id: string;
+  lesson_updated_at: string | null;
   quiz_id: string;
   quiz_version_id: string;
   quiz_version_number: number;
+  quiz_current_version_id: string;
+  quiz_updated_at: string | null;
   lesson_url: string;
 };
 

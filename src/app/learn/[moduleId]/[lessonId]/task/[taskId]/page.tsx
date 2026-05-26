@@ -2,6 +2,7 @@
 
 import { CoOpLessonExperience } from "@/components/learning/CoOpLessonExperience";
 import { MentorInlinePanel } from "@/components/learning/MentorInlinePanel";
+import { ZyloLessonCompanion } from "@/components/learning/ZyloLessonCompanion";
 import { useStudent } from "@/hooks/useStudent";
 import { getCanonicalLessonId, getLesson, getLessonNavigation, type Lesson } from "@/lib/lessons/getLesson";
 import Link from "next/link";
@@ -75,6 +76,11 @@ export default function LessonTaskPage() {
 
   return (
     <main className="min-h-screen bg-[#f7faf9] px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+      <ZyloLessonCompanion
+        pose="pointing"
+        label="Zylo mission"
+        message="Focus on one task. Submit your proof when you’re ready."
+      />
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link href={`/learn/${lesson.moduleId}/${lesson.lessonId}`} className="text-sm font-bold text-teal-700 hover:text-teal-900">

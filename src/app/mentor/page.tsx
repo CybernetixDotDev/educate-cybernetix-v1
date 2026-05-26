@@ -5,6 +5,7 @@ import { ChatMessage } from "@/components/mentor/ChatMessage";
 import { TypingIndicator } from "@/components/mentor/TypingIndicator";
 import { useMentor } from "@/hooks/useMentor";
 import { useStudent } from "@/hooks/useStudent";
+import { MENTOR_IDENTITY } from "@/lib/mentor/identity";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef } from "react";
@@ -55,18 +56,20 @@ function MentorChatPageContent() {
     <main className="flex h-screen flex-col bg-[#f7faf9] text-slate-950">
       <header className="border-b border-teal-100 bg-white/90 px-4 py-4 shadow-sm backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-100 text-lg font-black text-teal-900 shadow-sm">
-              CM
+          <div className="flex items-center gap-4">
+            <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-teal-50 via-cyan-50 to-violet-50 shadow-lg shadow-teal-900/10 ring-2 ring-teal-200">
+              <div className="absolute inset-x-3 bottom-2 h-4 rounded-full bg-teal-300/30 blur-md" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={MENTOR_IDENTITY.poses.waving} alt="Zylo" className="relative h-full w-full object-contain p-1" />
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-black text-slate-950">Cyber Mentor</h1>
+                <h1 className="text-xl font-black text-slate-950">{MENTOR_IDENTITY.name}</h1>
                 <Link href="/dashboard" className="hidden text-sm font-bold text-teal-700 hover:text-teal-900 sm:inline">
                   Home
                 </Link>
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm font-medium text-slate-500">
                 {studentLoading ? "Loading your profile..." : student ? `Here with you, ${student.display_name}` : "Sign in to chat"}
               </p>
             </div>
@@ -79,14 +82,22 @@ function MentorChatPageContent() {
 
       <section className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
         <div className="mx-auto flex min-h-full max-w-6xl flex-col gap-4">
-          <div className="rounded-3xl border border-teal-100 bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">One mentor, the right kind of help</p>
-            <h2 className="mt-2 max-w-3xl text-3xl font-black leading-tight tracking-tight text-slate-950">
-              Tell Cyber Mentor what you are trying to do.
-            </h2>
-            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-              It can explain a lesson, guide a project step, help debug code, review your work, quiz you gently, or prepare you to present.
-            </p>
+          <div className="grid gap-5 rounded-3xl border border-teal-100 bg-white p-6 shadow-sm lg:grid-cols-[1fr_12rem] lg:items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">One mentor, the right kind of help</p>
+              <h2 className="mt-2 max-w-3xl text-3xl font-black leading-tight tracking-tight text-slate-950">
+                Chat with Zylo like a real build buddy.
+              </h2>
+              <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
+                {MENTOR_IDENTITY.name} can explain a lesson, guide a project step, help debug code, review your work, quiz you gently, or prepare you to present.
+              </p>
+            </div>
+            <div className="hidden justify-center lg:flex">
+              <div className="flex h-44 w-44 items-center justify-center rounded-[2rem] bg-gradient-to-br from-teal-50 to-violet-50 ring-1 ring-teal-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={MENTOR_IDENTITY.poses.encouraging} alt="Zylo encouraging you" className="h-full w-full object-contain p-3" />
+              </div>
+            </div>
           </div>
 
           {studentError && (
@@ -129,7 +140,7 @@ function MentorChatPageContent() {
         <div className="mx-auto max-w-6xl">
           <ChatInput
             disabled={!student || loading}
-            placeholder={student ? "Ask Cyber Mentor one thing you want help with..." : "Sign in to ask your mentor"}
+            placeholder={student ? "Ask Zylo one thing you want help with..." : "Sign in to ask your mentor"}
             onSend={handleSend}
           />
         </div>

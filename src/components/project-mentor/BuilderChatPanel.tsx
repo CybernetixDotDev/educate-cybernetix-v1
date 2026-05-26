@@ -3,6 +3,7 @@
 import { ChatMessage } from "@/components/mentor/ChatMessage";
 import { TypingIndicator } from "@/components/mentor/TypingIndicator";
 import { useMentor } from "@/hooks/useMentor";
+import { MENTOR_IDENTITY } from "@/lib/mentor/identity";
 import { useEffect, useRef, useState } from "react";
 
 type BuilderChatPanelProps = {
@@ -43,9 +44,17 @@ export function BuilderChatPanel({ studentId, projectId }: BuilderChatPanelProps
   return (
     <section className="flex min-h-[34rem] flex-col rounded-3xl border border-teal-100 bg-white shadow-sm">
       <div className="border-b border-slate-200 p-5">
-        <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Cyber Mentor</p>
-        <h2 className="mt-1 text-xl font-black text-slate-950">Ask about your project</h2>
-        <p className="mt-1 text-sm leading-6 text-slate-500">Get one small next step, debugging help, or feedback on your code.</p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-teal-50 ring-1 ring-teal-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={MENTOR_IDENTITY.poses.hologram} alt="Zylo" className="h-full w-full object-contain p-1" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">{MENTOR_IDENTITY.name}</p>
+            <h2 className="mt-1 text-xl font-black text-slate-950">Ask about your project</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500">Get one small next step, debugging help, or feedback on your code.</p>
+          </div>
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">

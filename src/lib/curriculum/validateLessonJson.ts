@@ -47,6 +47,50 @@ export type CurriculumLessonTask = {
   ai_verification_criteria: string[];
 };
 
+export type CurriculumTeachingSequence = {
+  cinematic_hook: {
+    title: string;
+    body: string;
+    visual_prompt?: string;
+  };
+  why_it_matters: {
+    title: string;
+    body: string;
+    relatable_example?: string;
+  };
+  mental_model: {
+    title: string;
+    body: string;
+    metaphor?: string;
+    diagram_prompt?: string;
+  };
+  i_do: {
+    title: string;
+    steps: string[];
+    example?: string;
+  };
+  we_do: {
+    title: string;
+    steps: string[];
+    guided_prompt?: string;
+  };
+  you_do: {
+    title: string;
+    instruction: string;
+    expected_output?: string;
+  };
+  common_mistake: {
+    title: string;
+    mistake: string;
+    fix: string;
+  };
+  recap: {
+    title: string;
+    bullets: string[];
+    next_step?: string;
+  };
+};
+
 export type CurriculumFinalSubmission = {
   required_task_checkpoints: string[];
   final_project_upload: {
@@ -85,6 +129,7 @@ export type CurriculumLessonJson = {
   skills?: string[];
   video?: CurriculumContentBlock | null;
   objectives: string[];
+  teaching_sequence?: CurriculumTeachingSequence;
   content: CurriculumContentBlock[];
   tasks: CurriculumLessonTask[];
   final_submission: CurriculumFinalSubmission;
@@ -246,6 +291,81 @@ function validateLessonTasks(value: unknown, path: string, errors: string[]) {
   });
 }
 
+function validateTeachingSequence(value: unknown, path: string, errors: string[]) {
+  if (value === undefined || value === null) return;
+
+  if (!isRecord(value)) {
+    errors.push(`${path} must be an object when provided.`);
+    return;
+  }
+
+  const requiredSections = [
+    "cinematic_hook",
+    "why_it_matters",
+    "mental_model",
+    "i_do",
+    "we_do",
+    "you_do",
+    "common_mistake",
+    "recap",
+  ];
+
+  requiredSections.forEach((sectionKey) => {
+    if (!isRecord(value[sectionKey])) {
+      errors.push(`${path}.${sectionKey} must be an object.`);
+    }
+  });
+
+  if (isRecord(value.cinematic_hook)) {
+    validateString(value.cinematic_hook.title, `${path}.cinematic_hook.title`, errors);
+    validateString(value.cinematic_hook.body, `${path}.cinematic_hook.body`, errors);
+    validateOptionalString(value.cinematic_hook.visual_prompt, `${path}.cinematic_hook.visual_prompt`, errors);
+  }
+
+  if (isRecord(value.why_it_matters)) {
+    validateString(value.why_it_matters.title, `${path}.why_it_matters.title`, errors);
+    validateString(value.why_it_matters.body, `${path}.why_it_matters.body`, errors);
+    validateOptionalString(value.why_it_matters.relatable_example, `${path}.why_it_matters.relatable_example`, errors);
+  }
+
+  if (isRecord(value.mental_model)) {
+    validateString(value.mental_model.title, `${path}.mental_model.title`, errors);
+    validateString(value.mental_model.body, `${path}.mental_model.body`, errors);
+    validateOptionalString(value.mental_model.metaphor, `${path}.mental_model.metaphor`, errors);
+    validateOptionalString(value.mental_model.diagram_prompt, `${path}.mental_model.diagram_prompt`, errors);
+  }
+
+  if (isRecord(value.i_do)) {
+    validateString(value.i_do.title, `${path}.i_do.title`, errors);
+    validateStringArray(value.i_do.steps, `${path}.i_do.steps`, errors);
+    validateOptionalString(value.i_do.example, `${path}.i_do.example`, errors);
+  }
+
+  if (isRecord(value.we_do)) {
+    validateString(value.we_do.title, `${path}.we_do.title`, errors);
+    validateStringArray(value.we_do.steps, `${path}.we_do.steps`, errors);
+    validateOptionalString(value.we_do.guided_prompt, `${path}.we_do.guided_prompt`, errors);
+  }
+
+  if (isRecord(value.you_do)) {
+    validateString(value.you_do.title, `${path}.you_do.title`, errors);
+    validateString(value.you_do.instruction, `${path}.you_do.instruction`, errors);
+    validateOptionalString(value.you_do.expected_output, `${path}.you_do.expected_output`, errors);
+  }
+
+  if (isRecord(value.common_mistake)) {
+    validateString(value.common_mistake.title, `${path}.common_mistake.title`, errors);
+    validateString(value.common_mistake.mistake, `${path}.common_mistake.mistake`, errors);
+    validateString(value.common_mistake.fix, `${path}.common_mistake.fix`, errors);
+  }
+
+  if (isRecord(value.recap)) {
+    validateString(value.recap.title, `${path}.recap.title`, errors);
+    validateStringArray(value.recap.bullets, `${path}.recap.bullets`, errors);
+    validateOptionalString(value.recap.next_step, `${path}.recap.next_step`, errors);
+  }
+}
+
 function validateBoolean(value: unknown, path: string, errors: string[]) {
   if (typeof value !== "boolean") {
     errors.push(`${path} must be a boolean.`);
@@ -380,6 +500,7 @@ export function validateLessonJson(value: unknown): ValidationResult<CurriculumL
   validateOptionalNumber(value.estimated_minutes, "estimated_minutes", errors);
   validateOptionalStringArray(value.skills, "skills", errors);
   validateStringArray(value.objectives, "objectives", errors);
+  validateTeachingSequence(value.teaching_sequence, "teaching_sequence", errors);
 
   if (value.video !== undefined && value.video !== null) {
     validateContentBlock(value.video, "video", errors);

@@ -14,9 +14,20 @@ You convert a generated lesson package into a clean, professional scene plan for
 
 You MUST preserve the lesson topic, age range, skill level, objectives, task path, and final project outcome.
 You MUST produce a clear scene-by-scene plan that a renderer can turn into separate videos.
-You MUST create one intro scene and one scene for every hands-on task.
+You MUST create teaching scenes from lesson.teaching_sequence before task scenes.
+Teaching scenes MUST appear in this order:
+1. "intro" - Hook
+2. "why-it-matters" - Why It Matters
+3. "mental-model" - Mental Model Diagram
+4. "i-do" - I Do Demo
+5. "we-do" - We Do Guided Step
+6. "you-do" - You Do Setup
+7. "common-mistake" - Common Mistake
+8. "teaching-recap" - Recap
+Then create one scene for every hands-on task.
 Task scene IDs MUST be "task-1", "task-2", "task-3", etc. in the same order as lesson.tasks.
-The intro scene ID MUST be "intro".
+The hook scene ID MUST be "intro".
+Every scene MUST include Zylo in the scene plan. Put a plain-English Zylo direction in asset_references, such as "Zylo floats in and waves", "Zylo points at the diagram", or "Zylo celebrates the checkpoint".
 You MUST return valid JSON only.
 
 Output exactly this JSON shape:
@@ -55,6 +66,8 @@ Use visual_elements heavily. Every scene should include 3-6 visual elements.
 Use diagram_slide for flows like browser -> DNS -> server -> response.
 Use code_slide for code walkthroughs.
 Use checklist_slide for guided build task videos.
+Use demo_slide for I Do / We Do / You Do scenes.
+Zylo should feel like the lesson host: he floats in during intro, points at diagrams during teaching, explains each task, reacts to mistakes, and celebrates in recap/outro.
 Allowed visual element types: icon, arrow, card, code, badge.
 Allowed icons: browser, dns, server, database, code, checkpoint, project, mentor.
 
@@ -86,25 +99,6 @@ function stringArray(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
 }
 
-function wrapText(value: string, maxLength: number) {
-  const words = value.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
-  const lines: string[] = [];
-  let current = "";
-
-  words.forEach((word) => {
-    const next = current ? `${current} ${word}` : word;
-    if (next.length > maxLength && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = next;
-    }
-  });
-
-  if (current) lines.push(current);
-  return lines;
-}
-
 function duration(value: unknown, fallback = 20) {
   const seconds = typeof value === "number" && Number.isFinite(value) ? value : fallback;
   return Math.max(8, Math.min(90, Math.round(seconds)));
@@ -133,9 +127,173 @@ function visualElements(value: unknown, fallback: StoryboardScene["visual_elemen
 
 function taskVisualElements(task: LessonGeneratorOutput["tasks"][number], index: number): StoryboardScene["visual_elements"] {
   return [
-    { type: "badge", label: `Task ${index + 1}`, detail: "One focused build step", icon: "checkpoint" },
+    { type: "badge", label: "Zylo mission", detail: `Task ${index + 1}: one focused build step`, icon: "mentor" },
     { type: "card", label: task.title, detail: task.action, icon: "project" },
     { type: "card", label: "Checkpoint", detail: `Submit proof as ${task.checkpoint_types?.join(", ") || task.checkpoint_type}.`, icon: "checkpoint" },
+  ];
+}
+
+function zyloTaskDirection(task: LessonGeneratorOutput["tasks"][number], index: number) {
+  const formats = task.checkpoint_types?.join(", ") || task.checkpoint_type;
+  return `Zylo points at the task card and says: "Task ${index + 1}: ${task.title}. Show me your proof with ${formats} when you are done."`;
+}
+
+function joinLines(items: string[], fallback: string) {
+  return items.length > 0 ? items.join("\n") : fallback;
+}
+
+function teachingVisualElements(kind: "hook" | "why" | "model" | "demo" | "mistake" | "recap", lesson: LessonGeneratorOutput): StoryboardScene["visual_elements"] {
+  if (kind === "model") {
+    return [
+      { type: "icon", label: "Start", detail: "The first part of the idea", icon: "browser" },
+      { type: "arrow", label: "connects", detail: "Follow the flow" },
+      { type: "icon", label: "System", detail: "The part that responds", icon: "server" },
+      { type: "arrow", label: "returns", detail: "See the result" },
+      { type: "badge", label: "Mental model", detail: "Understand before building", icon: "mentor" },
+    ];
+  }
+
+  if (kind === "demo") {
+    return [
+      { type: "badge", label: "Watch", detail: "First see the move", icon: "mentor" },
+      { type: "card", label: "Try", detail: "Then follow one small step", icon: "checkpoint" },
+      { type: "card", label: "Build", detail: lesson.build_task.expected_outcome ?? lesson.build_task.title ?? "Create the project piece", icon: "project" },
+    ];
+  }
+
+  if (kind === "mistake") {
+    return [
+      { type: "badge", label: "Common mistake", detail: "Spot it early", icon: "checkpoint" },
+      { type: "card", label: "Slow down", detail: "Name the part that is confusing", icon: "mentor" },
+      { type: "card", label: "Fix", detail: "Take the next smallest step", icon: "project" },
+    ];
+  }
+
+  if (kind === "recap") {
+    return [
+      { type: "badge", label: "Recap", detail: "Lock in the idea", icon: "mentor" },
+      { type: "card", label: "Next", detail: "Start the guided build", icon: "project" },
+      { type: "card", label: "Proof", detail: "Submit a checkpoint when done", icon: "checkpoint" },
+    ];
+  }
+
+  if (kind === "why") {
+    return [
+      { type: "badge", label: "Why it matters", detail: "Connect skill to real life", icon: "mentor" },
+      { type: "card", label: "Use it", detail: lesson.build_task.expected_outcome ?? lesson.hook, icon: "project" },
+      { type: "card", label: "Confidence", detail: "You are becoming a creator", icon: "checkpoint" },
+    ];
+  }
+
+  return [
+    { type: "badge", label: "Zylo", detail: "Guided lesson", icon: "mentor" },
+    { type: "card", label: lesson.build_task.title ?? "Creator project", detail: lesson.build_task.expected_outcome ?? lesson.hook, icon: "project" },
+  ];
+}
+
+function teachingSequenceScenes(lesson: LessonGeneratorOutput): StoryboardScene[] {
+  const sequence = lesson.teaching_sequence;
+  const iDoSteps = sequence.i_do.steps;
+  const weDoSteps = sequence.we_do.steps;
+  const recapBullets = sequence.recap.bullets;
+
+  return [
+    {
+      scene_id: "intro",
+      title: sequence.cinematic_hook.title || "Hook",
+      duration_seconds: 18,
+      on_screen_text: sequence.cinematic_hook.body,
+      visual_type: "title_slide",
+      animation_style: "Cinematic title reveal with a friendly mentor badge and one bold project card.",
+      narration_text: sequence.cinematic_hook.body,
+      asset_references: [
+        "Zylo floats in, waves, and introduces himself as the lesson host.",
+        ...(sequence.cinematic_hook.visual_prompt ? [sequence.cinematic_hook.visual_prompt] : []),
+      ],
+      visual_elements: teachingVisualElements("hook", lesson),
+    },
+    {
+      scene_id: "why-it-matters",
+      title: sequence.why_it_matters.title || "Why It Matters",
+      duration_seconds: 22,
+      on_screen_text: sequence.why_it_matters.relatable_example
+        ? `${sequence.why_it_matters.body}\n${sequence.why_it_matters.relatable_example}`
+        : sequence.why_it_matters.body,
+      visual_type: "concept_slide",
+      animation_style: "Real-world example card slides beside the main idea.",
+      narration_text: [sequence.why_it_matters.body, sequence.why_it_matters.relatable_example].filter(Boolean).join(" "),
+      asset_references: ["Zylo leans in with an encouraging expression and points to the real-world example."],
+      visual_elements: teachingVisualElements("why", lesson),
+    },
+    {
+      scene_id: "mental-model",
+      title: sequence.mental_model.title || "Mental Model Diagram",
+      duration_seconds: 28,
+      on_screen_text: [sequence.mental_model.body, sequence.mental_model.metaphor].filter(Boolean).join("\n"),
+      visual_type: "diagram_slide",
+      animation_style: "Diagram pieces appear left to right with arrows showing the flow.",
+      narration_text: [sequence.mental_model.body, sequence.mental_model.metaphor, sequence.mental_model.diagram_prompt].filter(Boolean).join(" "),
+      asset_references: [
+        "Zylo points at each diagram node as the flow appears.",
+        ...(sequence.mental_model.diagram_prompt ? [sequence.mental_model.diagram_prompt] : []),
+      ],
+      visual_elements: teachingVisualElements("model", lesson),
+    },
+    {
+      scene_id: "i-do",
+      title: sequence.i_do.title || "I Do Demo",
+      duration_seconds: 30,
+      on_screen_text: joinLines(iDoSteps.slice(0, 4), sequence.i_do.example ?? "Watch the first move."),
+      visual_type: "demo_slide",
+      animation_style: "Mentor demonstrates the steps with numbered cards.",
+      narration_text: [joinLines(iDoSteps, ""), sequence.i_do.example].filter(Boolean).join(" "),
+      asset_references: ["Zylo demonstrates the first move and points at the example steps."],
+      visual_elements: teachingVisualElements("demo", lesson),
+    },
+    {
+      scene_id: "we-do",
+      title: sequence.we_do.title || "We Do Guided Step",
+      duration_seconds: 30,
+      on_screen_text: joinLines(weDoSteps.slice(0, 4), sequence.we_do.guided_prompt ?? "Try the next step with guidance."),
+      visual_type: "demo_slide",
+      animation_style: "Guided step cards animate with a pause-and-try marker.",
+      narration_text: [joinLines(weDoSteps, ""), sequence.we_do.guided_prompt].filter(Boolean).join(" "),
+      asset_references: ["Zylo pauses beside the steps and invites the student to try with him."],
+      visual_elements: teachingVisualElements("demo", lesson),
+    },
+    {
+      scene_id: "you-do",
+      title: sequence.you_do.title || "You Do Setup",
+      duration_seconds: 24,
+      on_screen_text: [sequence.you_do.instruction, sequence.you_do.expected_output ? `Goal: ${sequence.you_do.expected_output}` : ""].filter(Boolean).join("\n"),
+      visual_type: "demo_slide",
+      animation_style: "Project goal card appears with a clear action arrow.",
+      narration_text: [sequence.you_do.instruction, sequence.you_do.expected_output].filter(Boolean).join(" "),
+      asset_references: ["Zylo points at the project goal and hands the mission to the student."],
+      visual_elements: teachingVisualElements("demo", lesson),
+    },
+    {
+      scene_id: "common-mistake",
+      title: sequence.common_mistake.title || "Common Mistake",
+      duration_seconds: 22,
+      on_screen_text: `${sequence.common_mistake.mistake}\nFix: ${sequence.common_mistake.fix}`,
+      visual_type: "concept_slide",
+      animation_style: "Mistake card flips into a fix card.",
+      narration_text: `${sequence.common_mistake.mistake} ${sequence.common_mistake.fix}`,
+      asset_references: ["Zylo uses a thoughtful expression, then points from the mistake card to the fix card."],
+      visual_elements: teachingVisualElements("mistake", lesson),
+    },
+    {
+      scene_id: "teaching-recap",
+      title: sequence.recap.title || "Recap",
+      duration_seconds: 22,
+      on_screen_text: joinLines(recapBullets.slice(0, 4), sequence.recap.next_step ?? lesson.next_step),
+      visual_type: "recap_slide",
+      animation_style: "Recap checklist appears, then highlights the first task.",
+      narration_text: [joinLines(recapBullets, ""), sequence.recap.next_step].filter(Boolean).join(" "),
+      asset_references: ["Zylo celebrates the learning moment and points toward the first task."],
+      visual_elements: teachingVisualElements("recap", lesson),
+    },
   ];
 }
 
@@ -148,107 +306,11 @@ function fallbackScenes(lesson: LessonGeneratorOutput): StoryboardScene[] {
     visual_type: "checklist_slide" as const,
     animation_style: "Checklist items appear one at a time.",
     narration_text: task.instruction,
-    asset_references: task.video_url ? [task.video_url] : [],
+    asset_references: [zyloTaskDirection(task, index), ...(task.video_url ? [task.video_url] : [])],
     visual_elements: taskVisualElements(task, index),
   }));
 
-  return [
-    {
-      scene_id: "intro",
-      title: "Hook",
-      duration_seconds: 15,
-      on_screen_text: lesson.hook,
-      visual_type: "title_slide",
-      animation_style: "Soft fade in with one bold headline.",
-      narration_text: lesson.hook,
-      asset_references: [],
-      visual_elements: [
-        { type: "badge", label: "Cyber Mentor", detail: "Guided lesson", icon: "mentor" },
-        { type: "card", label: lesson.build_task.title ?? "Creator project", detail: lesson.build_task.expected_outcome ?? lesson.hook, icon: "project" },
-      ],
-    },
-    {
-      scene_id: "scene-2",
-      title: "Objective",
-      duration_seconds: 20,
-      on_screen_text: lesson.objective.join("\n"),
-      visual_type: "concept_slide",
-      animation_style: "Objective bullets slide in gently.",
-      narration_text: lesson.objective.join(" "),
-      asset_references: [],
-      visual_elements: lesson.objective.slice(0, 4).map((objective, index) => ({
-        type: "card" as const,
-        label: `Goal ${index + 1}`,
-        detail: objective,
-        icon: "checkpoint" as const,
-      })),
-    },
-    {
-      scene_id: "scene-3",
-      title: "Teaching Steps",
-      duration_seconds: 35,
-      on_screen_text: lesson.teaching_steps.slice(0, 5).join("\n"),
-      visual_type: "diagram_slide",
-      animation_style: "Step cards move from left to right.",
-      narration_text: lesson.teaching_steps.join(" "),
-      asset_references: [],
-      visual_elements: [
-        { type: "icon", label: "Browser", detail: "Starts the request", icon: "browser" },
-        { type: "arrow", label: "asks", detail: "Find the address" },
-        { type: "icon", label: "DNS", detail: "Finds the server", icon: "dns" },
-        { type: "arrow", label: "connects", detail: "Send request" },
-        { type: "icon", label: "Server", detail: "Sends the page", icon: "server" },
-      ],
-    },
-    ...taskScenes,
-    {
-      scene_id: `scene-${taskScenes.length + 4}`,
-      title: "Recap",
-      duration_seconds: 20,
-      on_screen_text: lesson.recap,
-      visual_type: "recap_slide",
-      animation_style: "Final summary card fades in.",
-      narration_text: lesson.recap,
-      asset_references: [],
-      visual_elements: [
-        { type: "badge", label: "Recap", detail: "You are becoming a creator.", icon: "mentor" },
-        { type: "card", label: "Next step", detail: lesson.next_step, icon: "project" },
-      ],
-    },
-  ];
-}
-
-function defaultVisualElements(scene: StoryboardScene, lesson: LessonGeneratorOutput): StoryboardScene["visual_elements"] {
-  if (scene.visual_type === "diagram_slide") {
-    return [
-      { type: "icon", label: "Browser", detail: "Starts the request", icon: "browser" },
-      { type: "arrow", label: "asks", detail: "Find the address" },
-      { type: "icon", label: "DNS", detail: "Finds the server", icon: "dns" },
-      { type: "arrow", label: "connects", detail: "Send request" },
-      { type: "icon", label: "Server", detail: "Sends the page", icon: "server" },
-    ];
-  }
-
-  if (scene.visual_type === "code_slide") {
-    return [
-      { type: "code", label: "Code editor", detail: scene.on_screen_text || scene.title, icon: "code" },
-      { type: "badge", label: "Try it", detail: "Change one line and test it", icon: "checkpoint" },
-    ];
-  }
-
-  if (scene.visual_type === "title_slide") {
-    return [
-      { type: "badge", label: "Cyber Mentor", detail: "Guided lesson", icon: "mentor" },
-      { type: "card", label: lesson.build_task.title ?? "Creator project", detail: lesson.build_task.expected_outcome ?? lesson.hook, icon: "project" },
-    ];
-  }
-
-  return wrapText(scene.on_screen_text || scene.title, 40).slice(0, 4).map((line, index) => ({
-    type: "card",
-    label: index === 0 ? scene.title : `Step ${index + 1}`,
-    detail: line,
-    icon: "checkpoint",
-  }));
+  return [...teachingSequenceScenes(lesson), ...taskScenes];
 }
 
 function sceneMatchesTask(scene: StoryboardScene, task: LessonGeneratorOutput["tasks"][number], index: number) {
@@ -259,17 +321,9 @@ function sceneMatchesTask(scene: StoryboardScene, task: LessonGeneratorOutput["t
 function ensureStoryboardCoverage(scenes: StoryboardScene[], lesson: LessonGeneratorOutput): StoryboardScene[] {
   const fallback = fallbackScenes(lesson);
   const normalized = scenes.length > 0 ? scenes : fallback;
-  const introSource = normalized.find((scene) => scene.scene_id === "intro") ?? normalized[0] ?? fallback[0];
-  const intro: StoryboardScene = {
-    ...introSource,
-    scene_id: "intro",
-    visual_type: "title_slide",
-    visual_elements: introSource.visual_elements?.length ? introSource.visual_elements : defaultVisualElements({ ...introSource, visual_type: "title_slide" }, lesson),
-  };
-  const existingTasks = new Set<string>();
+  const teachingScenes = teachingSequenceScenes(lesson);
   const taskScenes = lesson.tasks.map((task, index): StoryboardScene => {
     const found = normalized.find((scene) => sceneMatchesTask(scene, task, index));
-    existingTasks.add(found?.scene_id ?? "");
     return {
       scene_id: `task-${index + 1}`,
       title: found?.title || task.title,
@@ -278,40 +332,12 @@ function ensureStoryboardCoverage(scenes: StoryboardScene[], lesson: LessonGener
       visual_type: "checklist_slide",
       animation_style: found?.animation_style || "Task cards appear one at a time with a checkpoint badge.",
       narration_text: found?.narration_text || task.instruction,
-      asset_references: found?.asset_references ?? [],
+      asset_references: [zyloTaskDirection(task, index), ...(found?.asset_references ?? [])],
       visual_elements: found?.visual_elements?.length ? found.visual_elements : taskVisualElements(task, index),
     };
   });
-  const middleScenes = normalized
-    .filter((scene) => scene.scene_id !== introSource.scene_id && !existingTasks.has(scene.scene_id) && scene.visual_type !== "recap_slide")
-    .slice(0, 3)
-    .map((scene, index): StoryboardScene => {
-      const shouldDiagram = index === 0 && !normalized.some((item) => item.visual_type === "diagram_slide");
-      const nextScene = {
-        ...scene,
-        scene_id: scene.scene_id.startsWith("task-") ? `lesson-${index + 1}` : scene.scene_id,
-        visual_type: shouldDiagram ? "diagram_slide" as const : scene.visual_type,
-      };
-      return {
-        ...nextScene,
-        visual_elements: nextScene.visual_elements?.length ? nextScene.visual_elements : defaultVisualElements(nextScene, lesson),
-      };
-    });
-  const lessonWalkthrough = middleScenes.length > 0
-    ? middleScenes
-    : fallback.slice(1, 3).map((scene) => ({
-        ...scene,
-        visual_elements: scene.visual_elements?.length ? scene.visual_elements : defaultVisualElements(scene, lesson),
-      }));
-  const recapSource = normalized.find((scene) => scene.visual_type === "recap_slide") ?? fallback[fallback.length - 1];
-  const recap: StoryboardScene = {
-    ...recapSource,
-    scene_id: "recap",
-    visual_type: "recap_slide",
-    visual_elements: recapSource.visual_elements?.length ? recapSource.visual_elements : defaultVisualElements({ ...recapSource, visual_type: "recap_slide" }, lesson),
-  };
 
-  return [intro, ...lessonWalkthrough, ...taskScenes, recap];
+  return [...teachingScenes, ...taskScenes];
 }
 
 function normalizeStoryboard(value: unknown, lesson: LessonGeneratorOutput): LessonStoryboard {
@@ -336,9 +362,7 @@ function normalizeStoryboard(value: unknown, lesson: LessonGeneratorOutput): Les
 
   return {
     title: stringValue(record.title, "Lesson Storyboard"),
-    total_duration_seconds: typeof record.total_duration_seconds === "number" && record.total_duration_seconds > 0
-      ? Math.round(record.total_duration_seconds)
-      : totalDuration,
+    total_duration_seconds: totalDuration,
     style_notes: stringValue(record.style_notes, "Clean, premium, high-whitespace, teen-friendly visual style."),
     scenes,
     caption_notes: stringValue(record.caption_notes, "Generate captions from narration_text for each scene."),

@@ -3,6 +3,7 @@
 import { getCoOpProgress, submitFinalCoOp, submitTaskCheckpoint } from "@/lib/learning/coOpActions";
 import type { CoOpFinalSubmission, CoOpSubmissionEvidence, CoOpTaskSubmission } from "@/lib/learning/coOpTypes";
 import type { Lesson, LessonTask } from "@/lib/lessons/getLesson";
+import { MENTOR_IDENTITY } from "@/lib/mentor/identity";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -46,6 +47,64 @@ function taskStepLabel(task: LessonTask) {
 
 function taskFormats(task: LessonTask) {
   return task.checkpoint_types?.length ? task.checkpoint_types : [task.checkpoint_type];
+}
+
+function zyloTaskLine(task: LessonTask) {
+  const title = task.title.toLowerCase();
+  if (title.includes("diagram") || task.action.toLowerCase().includes("diagram")) return "Let's draw the journey map together.";
+  if (title.includes("code") || task.action.toLowerCase().includes("code")) return "Let's make the code do one clear thing.";
+  if (title.includes("style") || title.includes("css")) return "Let's make it look clean and intentional.";
+  if (title.includes("explain") || task.checkpoint_type === "text") return "Tell me the idea in your own words.";
+  if (task.checkpoint_type === "screenshot") return "Show me your best screenshot when it works.";
+  if (task.checkpoint_type === "link") return "Send me the link so I can check the result.";
+  return "Let's finish this mission one small move at a time.";
+}
+
+function ZyloMissionCard({ task }: { task: LessonTask }) {
+  return (
+    <div className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50 via-white to-cyan-50 p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-teal-100">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={MENTOR_IDENTITY.poses.pointing} alt="Zylo" className="h-full w-full object-contain p-1" />
+        </div>
+        <div>
+          <p className="text-xs font-black uppercase tracking-wide text-teal-700">Zylo mission</p>
+          <p className="mt-1 text-sm font-bold leading-6 text-slate-800">{zyloTaskLine(task)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ZyloVerificationCard({ submission }: { submission: CoOpTaskSubmission }) {
+  const passed = submission.status === "pass";
+  const feedback = submission.verification_json?.feedback ?? submission.verification_json?.reason;
+  const nextStep = submission.verification_json?.next_step;
+  const hint = submission.verification_json?.hint;
+
+  return (
+    <div className={`mt-4 rounded-2xl border p-4 text-sm ${statusTone(submission.status)}`}>
+      <div className="flex gap-3">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-white/70">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={passed ? MENTOR_IDENTITY.poses.celebrating : MENTOR_IDENTITY.poses.thinking}
+            alt={passed ? "Zylo celebrating" : "Zylo thinking"}
+            className="h-full w-full object-contain p-1"
+          />
+        </div>
+        <div>
+          <p className="font-black">
+            {passed ? "You did it! That's a solid checkpoint." : "This is close. Let's fix one small thing together."}
+          </p>
+          {feedback && <p className="mt-2">{feedback}</p>}
+          {nextStep && <p className="mt-2">{nextStep}</p>}
+          {hint && <p className="mt-2 text-xs opacity-80">Hint: {hint}</p>}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function TaskVideo({ url, title }: { url?: string; title: string }) {
@@ -181,7 +240,7 @@ export function CoOpLessonExperience({ lesson, nextHref, nextLabel, initialTaskI
           const withoutCurrent = current.filter((item) => item.task_id !== task.task_id);
           return [...withoutCurrent, result.data as CoOpTaskSubmission];
         });
-        setMessage(result.data.status === "pass" ? "Checkpoint passed. Keep going." : "Cyber Mentor left a revision note.");
+        setMessage(result.data.status === "pass" ? "Zylo says: You did it! That's a solid checkpoint." : "Zylo says: This is close. Let's fix one small thing together.");
 
         const nextTask = lesson.tasks.find((item) => !submissionsByTask.has(item.task_id) && item.task_id !== task.task_id);
         if (result.data.status === "pass" && nextTask && !taskPageBaseHref) setActiveTaskId(nextTask.task_id);
@@ -219,7 +278,7 @@ export function CoOpLessonExperience({ lesson, nextHref, nextLabel, initialTaskI
         }
 
         setFinalSubmission(result.data);
-        setMessage(result.data.status === "pass" ? "Lesson complete. Your next step is unlocked." : "Cyber Mentor wants one small revision first.");
+        setMessage(result.data.status === "pass" ? "Zylo says: You did it! Your next step is unlocked." : "Zylo says: This is close. Let's fix one small thing together.");
       } catch (caughtError) {
         setError(caughtError instanceof Error ? caughtError.message : "Unable to submit final review.");
       }
@@ -254,6 +313,17 @@ export function CoOpLessonExperience({ lesson, nextHref, nextLabel, initialTaskI
             <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
               <div className="h-full rounded-full bg-teal-600 transition-all" style={{ width: `${progressPercent}%` }} />
             </div>
+            {passedCount > 0 && (
+              <div className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white p-3">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-emerald-50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={MENTOR_IDENTITY.poses.celebrating} alt="Zylo cheering" className="h-full w-full object-contain p-1" />
+                </div>
+                <p className="text-sm font-black leading-5 text-emerald-900">
+                  {allTasksPassed ? "You cleared every checkpoint. Final review time!" : "Nice checkpoint. Zylo is cheering you on!"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -294,6 +364,7 @@ export function CoOpLessonExperience({ lesson, nextHref, nextLabel, initialTaskI
 
             <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
               <div className="space-y-4">
+                <ZyloMissionCard task={activeTask} />
                 <TaskVideo url={activeTask.video_url} title={activeTask.title} />
                 <div className="rounded-2xl bg-[#f7faf9] p-4">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-500">Action</p>
@@ -301,7 +372,7 @@ export function CoOpLessonExperience({ lesson, nextHref, nextLabel, initialTaskI
                 </div>
                 {activeTask.ai_verification_criteria.length > 0 && (
                   <div className="rounded-2xl border border-slate-200 p-4">
-                    <p className="text-xs font-black uppercase tracking-wide text-slate-500">Cyber Mentor checks for</p>
+                    <p className="text-xs font-black uppercase tracking-wide text-slate-500">Zylo checks for</p>
                     <ul className="mt-2 space-y-1 text-sm text-slate-600">
                       {activeTask.ai_verification_criteria.map((criterion) => (
                         <li key={criterion}>- {criterion}</li>
@@ -343,7 +414,7 @@ export function CoOpLessonExperience({ lesson, nextHref, nextLabel, initialTaskI
                     <textarea
                       value={activeTaskEvidence.text_explanation ?? ""}
                       onChange={(event) => updateEvidence(activeTask.task_id, { text_explanation: event.target.value })}
-                      placeholder="Tell Cyber Mentor what you made or changed."
+                      placeholder="Tell Zylo what you made or changed."
                       rows={4}
                       className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-400"
                     />
@@ -358,13 +429,7 @@ export function CoOpLessonExperience({ lesson, nextHref, nextLabel, initialTaskI
                   </button>
                 </div>
 
-                {activeSubmission?.verification_json && (
-                  <div className={`mt-4 rounded-2xl border p-4 text-sm ${statusTone(activeSubmission.status)}`}>
-                    <p className="font-black">{activeSubmission.verification_json.feedback ?? activeSubmission.verification_json.reason}</p>
-                    {activeSubmission.verification_json.next_step && <p className="mt-2">{activeSubmission.verification_json.next_step}</p>}
-                    {activeSubmission.verification_json.hint && <p className="mt-2 text-xs opacity-80">Hint: {activeSubmission.verification_json.hint}</p>}
-                  </div>
-                )}
+                {activeSubmission?.verification_json && <ZyloVerificationCard submission={activeSubmission} />}
               </div>
             </div>
 
@@ -419,7 +484,7 @@ export function CoOpLessonExperience({ lesson, nextHref, nextLabel, initialTaskI
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="text-sm font-bold uppercase tracking-wide text-teal-700">Final submission</p>
-              <h2 className="mt-1 text-3xl font-black text-slate-950">Ask Cyber Mentor for your final review</h2>
+              <h2 className="mt-1 text-3xl font-black text-slate-950">Ask Zylo for your final review</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{lesson.finalSubmission.final_project_upload.prompt}</p>
             </div>
             <span className={`rounded-full border px-3 py-1 text-xs font-black ${statusTone(finalSubmission?.status)}`}>
@@ -445,7 +510,7 @@ export function CoOpLessonExperience({ lesson, nextHref, nextLabel, initialTaskI
               <textarea
                 value={finalEvidence.text_explanation ?? ""}
                 onChange={(event) => setFinalEvidence((current) => ({ ...current, text_explanation: event.target.value }))}
-                placeholder="What did you finish? What should Cyber Mentor notice?"
+                placeholder="What did you finish? What should Zylo notice?"
                 rows={4}
                 disabled={!allTasksPassed}
                 className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-400 disabled:bg-slate-100"
@@ -503,9 +568,21 @@ export function CoOpLessonExperience({ lesson, nextHref, nextLabel, initialTaskI
 
           {finalSubmission?.mentor_review_json && (
             <div className={`mt-5 rounded-2xl border p-4 text-sm ${statusTone(finalSubmission.status)}`}>
-              <p className="font-black">Cyber Mentor final review</p>
-              <p className="mt-2">{finalSubmission.mentor_review_json.feedback}</p>
-              {finalSubmission.mentor_review_json.next_step && <p className="mt-2">{finalSubmission.mentor_review_json.next_step}</p>}
+              <div className="flex gap-3">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-white/70">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={finalSubmission.status === "pass" ? MENTOR_IDENTITY.poses.celebrating : MENTOR_IDENTITY.poses.thinking}
+                    alt="Zylo final review"
+                    className="h-full w-full object-contain p-1"
+                  />
+                </div>
+                <div>
+                  <p className="font-black">Zylo final review</p>
+                  <p className="mt-2">{finalSubmission.mentor_review_json.feedback}</p>
+                  {finalSubmission.mentor_review_json.next_step && <p className="mt-2">{finalSubmission.mentor_review_json.next_step}</p>}
+                </div>
+              </div>
             </div>
           )}
         </section>

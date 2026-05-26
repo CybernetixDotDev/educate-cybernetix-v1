@@ -1,4 +1,5 @@
 import type { QuizQuestion } from "@/hooks/useQuiz";
+import type { TeachingSequence } from "@/lib/lesson-studio/types";
 import { createClient } from "@/utils/supabase/client";
 
 export type LessonCodeExample = {
@@ -69,12 +70,15 @@ export type LessonQuizMetadata = {
   questions: QuizQuestion[];
 };
 
+export type LessonTeachingSequence = TeachingSequence;
+
 export type Lesson = {
   moduleId: string;
   lessonId: string;
   title: string;
   summary: string;
   objectives: string[];
+  teachingSequence: LessonTeachingSequence | null;
   body: LessonSection[];
   codeExamples: LessonCodeExample[];
   images: LessonImage[];
@@ -123,6 +127,7 @@ type LessonVersionJson = {
   estimated_minutes?: number;
   video?: ContentBlock | null;
   objectives?: string[];
+  teaching_sequence?: LessonTeachingSequence;
   content?: ContentBlock[];
   tasks?: LessonTask[];
   final_submission?: LessonFinalSubmission;
@@ -321,6 +326,18 @@ function humanize(value: string) {
     .join(" ");
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringValue(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function stringArray(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
 function getSkill(moduleId: string) {
   return SKILL_BY_MODULE[moduleId] ?? "project_management";
 }
@@ -348,6 +365,7 @@ function buildLesson(moduleId: string, lessonId: string): Lesson {
     title: `${moduleTitle}: ${lessonLabel}`,
     summary: `Learn the core ${moduleTitle.toLowerCase()} idea, practice it, then check your understanding with a short quiz.`,
     objectives: [],
+    teachingSequence: null,
     body: [
       {
         heading: "What you are learning",
@@ -481,6 +499,68 @@ function normalizeTasks(value: unknown): LessonTask[] {
   return tasks;
 }
 
+function normalizeTeachingSequence(value: unknown): LessonTeachingSequence | null {
+  if (!isRecord(value)) return null;
+
+  const section = (key: keyof LessonTeachingSequence) => isRecord(value[key]) ? value[key] as Record<string, unknown> : null;
+  const cinematicHook = section("cinematic_hook");
+  const whyItMatters = section("why_it_matters");
+  const mentalModel = section("mental_model");
+  const iDo = section("i_do");
+  const weDo = section("we_do");
+  const youDo = section("you_do");
+  const commonMistake = section("common_mistake");
+  const recap = section("recap");
+
+  if (!cinematicHook || !whyItMatters || !mentalModel || !iDo || !weDo || !youDo || !commonMistake || !recap) {
+    return null;
+  }
+
+  return {
+    cinematic_hook: {
+      title: stringValue(cinematicHook.title, "Start here"),
+      body: stringValue(cinematicHook.body),
+      visual_prompt: stringValue(cinematicHook.visual_prompt) || undefined,
+    },
+    why_it_matters: {
+      title: stringValue(whyItMatters.title, "Why it matters"),
+      body: stringValue(whyItMatters.body),
+      relatable_example: stringValue(whyItMatters.relatable_example) || undefined,
+    },
+    mental_model: {
+      title: stringValue(mentalModel.title, "Mental model"),
+      body: stringValue(mentalModel.body),
+      metaphor: stringValue(mentalModel.metaphor) || undefined,
+      diagram_prompt: stringValue(mentalModel.diagram_prompt) || undefined,
+    },
+    i_do: {
+      title: stringValue(iDo.title, "I do"),
+      steps: stringArray(iDo.steps),
+      example: stringValue(iDo.example) || undefined,
+    },
+    we_do: {
+      title: stringValue(weDo.title, "We do"),
+      steps: stringArray(weDo.steps),
+      guided_prompt: stringValue(weDo.guided_prompt) || undefined,
+    },
+    you_do: {
+      title: stringValue(youDo.title, "You do"),
+      instruction: stringValue(youDo.instruction),
+      expected_output: stringValue(youDo.expected_output) || undefined,
+    },
+    common_mistake: {
+      title: stringValue(commonMistake.title, "Common mistake"),
+      mistake: stringValue(commonMistake.mistake),
+      fix: stringValue(commonMistake.fix),
+    },
+    recap: {
+      title: stringValue(recap.title, "Recap"),
+      bullets: stringArray(recap.bullets),
+      next_step: stringValue(recap.next_step) || undefined,
+    },
+  };
+}
+
 function normalizeFinalSubmission(value: unknown, tasks: LessonTask[]): LessonFinalSubmission | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     if (tasks.length === 0) return null;
@@ -560,6 +640,7 @@ function transformLesson(moduleId: string, lessonId: string, lessonJson: LessonV
   const objectives = lessonJson.objectives ?? [];
   const tasks = normalizeTasks(lessonJson.tasks);
   const finalSubmission = normalizeFinalSubmission(lessonJson.final_submission, tasks);
+  const teachingSequence = normalizeTeachingSequence(lessonJson.teaching_sequence);
   const body: LessonSection[] = [
     ...content
       .filter((block) => !["code", "image", "video"].includes(block.type))
@@ -621,6 +702,7 @@ function transformLesson(moduleId: string, lessonId: string, lessonJson: LessonV
     title: lessonJson.title,
     summary: lessonJson.description ?? objectives[0] ?? `Complete ${lessonJson.title} and check your understanding.`,
     objectives,
+    teachingSequence,
     body: body.length > 0 ? body : [{ heading: "Lesson", body: "Lesson content is being prepared." }],
     codeExamples,
     images,

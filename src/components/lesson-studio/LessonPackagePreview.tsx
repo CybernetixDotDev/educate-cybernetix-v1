@@ -33,6 +33,17 @@ export function LessonPackagePreview({ lesson }: LessonPackagePreviewProps) {
         <PreviewCard title="Project checklist" items={lesson.project_checklist} />
       </div>
 
+      <div className="rounded-3xl bg-[#f7faf9] p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">Teaching sequence</p>
+        <h3 className="mt-1 font-semibold text-slate-950">Lesson before the tasks</h3>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <TeachingSequenceCard title={lesson.teaching_sequence.cinematic_hook.title} body={lesson.teaching_sequence.cinematic_hook.body} />
+          <TeachingSequenceCard title={lesson.teaching_sequence.why_it_matters.title} body={lesson.teaching_sequence.why_it_matters.body} />
+          <TeachingSequenceCard title={lesson.teaching_sequence.mental_model.title} body={lesson.teaching_sequence.mental_model.body} />
+          <TeachingSequenceCard title={lesson.teaching_sequence.you_do.title} body={lesson.teaching_sequence.you_do.instruction} />
+        </div>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-3xl bg-slate-50 p-5">
           <h3 className="font-semibold text-slate-950">Build task</h3>
@@ -213,5 +224,14 @@ function TextPanel({ title, value }: { title: string; value: string }) {
       <h3 className="font-semibold text-slate-950">{title}</h3>
       <p className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap text-sm leading-6 text-slate-600">{value}</p>
     </div>
+  );
+}
+
+function TeachingSequenceCard({ title, body }: { title: string; body: string }) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <h4 className="font-semibold text-slate-950">{title}</h4>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
+    </article>
   );
 }

@@ -2,6 +2,7 @@
 
 import { LessonContent } from "@/components/learning/LessonContent";
 import { MentorInlinePanel } from "@/components/learning/MentorInlinePanel";
+import { ZyloLessonCompanion } from "@/components/learning/ZyloLessonCompanion";
 import { useLessonProgress } from "@/hooks/useLessonProgress";
 import { useStudent } from "@/hooks/useStudent";
 import { getCanonicalLessonId, getLesson, getLessonNavigation, type Lesson } from "@/lib/lessons/getLesson";
@@ -110,6 +111,11 @@ export default function LessonPage() {
 
   return (
     <main className="min-h-screen bg-[#f7faf9] px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+      <ZyloLessonCompanion
+        pose={isComplete ? "celebrating" : "floating"}
+        label={isComplete ? "Zylo cheers" : "Zylo is with you"}
+        message={isComplete ? "You completed this lesson. That glow is real." : "I’ll float nearby while you learn, then we’ll build it together."}
+      />
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link href="/dashboard" className="text-sm font-bold text-teal-700 hover:text-teal-900">
@@ -149,7 +155,7 @@ export default function LessonPage() {
                 <p className="text-sm font-bold uppercase tracking-wide text-teal-700">Next step</p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">Ready to check your understanding?</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Take the checkpoint when you feel ready. If anything feels fuzzy, ask Cyber Mentor first.
+                  Take the checkpoint when you feel ready. If anything feels fuzzy, ask Zylo first.
                 </p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
                   <Link href={`/learn/${moduleId}/${activeLessonId}/quiz`} className="rounded-xl bg-teal-600 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-teal-700">

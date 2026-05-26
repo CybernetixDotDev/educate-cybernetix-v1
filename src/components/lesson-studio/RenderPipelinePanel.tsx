@@ -95,6 +95,7 @@ export function RenderPipelinePanel({ render, onRefresh, refreshing = false }: R
         <AssetLink label="Thumbnail" url={render.thumbnail_url} />
         <AssetLink label="Full lesson MP4" url={render.mp4_url} />
         <AssetLink label="Intro MP4" url={render.render_json.intro_video_url} />
+        <AssetLink label="Intro + lesson MP4" url={render.render_json.intro_lesson_video_url} />
         <AssetLink label="Lesson walkthrough MP4" url={render.render_json.lesson_video_url} />
       </div>
 
@@ -125,6 +126,7 @@ export function RenderPipelinePanel({ render, onRefresh, refreshing = false }: R
           <StatusItem done={Boolean(render.render_json.tts_audio_urls?.length)} label="TTS audio files" />
           <StatusItem done={Boolean(render.render_json.slide_asset_urls?.length)} label="Rendered slide assets" />
           <StatusItem done={Boolean(render.render_json.intro_video_url)} label="Separate intro video" />
+          <StatusItem done={Boolean(render.render_json.intro_lesson_video_url)} label="Combined intro + lesson video" />
           <StatusItem done={Boolean(render.render_json.lesson_video_url)} label="Separate lesson walkthrough" />
           <StatusItem done={Boolean(render.render_json.scene_video_urls?.some((scene) => scene.kind === "task"))} label="Separate task videos" />
         </div>

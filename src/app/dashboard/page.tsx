@@ -230,7 +230,7 @@ async function DashboardCommandCenter() {
                   <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">You are becoming a creator</p>
                   <h1 className="mt-2 text-4xl font-black leading-tight tracking-tight sm:text-5xl">Today&apos;s work, {data.student.display_name}</h1>
                   <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                    Follow one simple path: learn the concept, build the mission, and ask Cyber Mentor when you need help.
+                    Follow one simple path: learn the concept, build the mission, and ask Zylo when you need help.
                   </p>
                   <div className="mt-5 inline-flex rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-bold text-teal-900">
                     You are here: Home &rarr; Next step: Continue course

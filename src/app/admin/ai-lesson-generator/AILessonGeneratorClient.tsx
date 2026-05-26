@@ -2,6 +2,7 @@
 
 import { LessonBriefForm } from "@/components/lesson-studio/LessonBriefForm";
 import { LessonPackagePreview } from "@/components/lesson-studio/LessonPackagePreview";
+import { PublishStatusPanel, type PublishStatus } from "@/components/lesson-studio/PublishStatusPanel";
 import { RenderPipelinePanel } from "@/components/lesson-studio/RenderPipelinePanel";
 import { ReviewPublishPanel } from "@/components/lesson-studio/ReviewPublishPanel";
 import { StoryboardPreview } from "@/components/lesson-studio/StoryboardPreview";
@@ -78,6 +79,7 @@ export function AILessonGeneratorClient({ blueprints }: AILessonGeneratorClientP
   const [refreshingRender, setRefreshingRender] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [publishStatus, setPublishStatus] = useState<PublishStatus | null>(null);
   const [localBlueprints, setLocalBlueprints] = useState(blueprints);
 
   const blueprintOptions = useMemo(
@@ -92,6 +94,7 @@ export function AILessonGeneratorClient({ blueprints }: AILessonGeneratorClientP
       setLesson(null);
       setStoryboard(null);
       setRender(null);
+      setPublishStatus(null);
       return;
     }
 
@@ -103,6 +106,7 @@ export function AILessonGeneratorClient({ blueprints }: AILessonGeneratorClientP
     setLesson(null);
     setStoryboard(null);
     setRender(null);
+    setPublishStatus(null);
     setStatus(`Loaded blueprint: ${selected.title}`);
     setError(null);
   }
@@ -158,6 +162,7 @@ export function AILessonGeneratorClient({ blueprints }: AILessonGeneratorClientP
       setLesson(result.data);
       setStoryboard(null);
       setRender(null);
+      setPublishStatus(null);
       setStatus("Lesson package generated.");
     } finally {
       setLoading(null);
@@ -183,6 +188,7 @@ export function AILessonGeneratorClient({ blueprints }: AILessonGeneratorClientP
 
       setStoryboard(result.data);
       setRender(null);
+      setPublishStatus(null);
       setStatus("Storyboard generated.");
     } finally {
       setLoading(null);
@@ -207,6 +213,7 @@ export function AILessonGeneratorClient({ blueprints }: AILessonGeneratorClientP
       }
 
       setRender(result.data);
+      setPublishStatus(null);
       setStatus(
         result.data.status === "completed"
           ? "MP4 render completed."
@@ -235,6 +242,9 @@ export function AILessonGeneratorClient({ blueprints }: AILessonGeneratorClientP
       }
 
       setRender(result.data);
+      if (result.data.status !== "completed" && !result.data.render_json?.local_renderer_completed) {
+        setPublishStatus(null);
+      }
       setStatus(
         result.data.mp4_url
           ? "MP4 render completed."
@@ -312,7 +322,9 @@ export function AILessonGeneratorClient({ blueprints }: AILessonGeneratorClientP
         onStoryboardChange={setStoryboard}
         onStatus={setStatus}
         onError={setError}
+        onPublished={setPublishStatus}
       />
+      <PublishStatusPanel publishStatus={publishStatus} />
     </div>
   );
 }

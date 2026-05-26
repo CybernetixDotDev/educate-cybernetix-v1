@@ -14,11 +14,11 @@ export function ProjectSnapshot({ project }: { project: DashboardProject | null 
           <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Current Mission</p>
           <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{project?.title ?? "Build your first real project"}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            {project?.description ?? "Your course work turns into a portfolio project. Ask Cyber Mentor to create the first build plan when you are ready."}
+            {project?.description ?? "Your course work turns into a portfolio project. Ask Zylo to create the first build plan when you are ready."}
           </p>
         </div>
         <Link href="/mentor?intent=project" className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
-          Ask Cyber Mentor
+          Ask Zylo
         </Link>
       </div>
       <div className="mt-6">
@@ -33,7 +33,7 @@ export function ProjectSnapshot({ project }: { project: DashboardProject | null 
             </span>
           </div>
         ))}
-        {tasks.length === 0 && <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No project tasks yet. Start with the next lesson, then ask Cyber Mentor to turn it into a project task.</p>}
+        {tasks.length === 0 && <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No project tasks yet. Start with the next lesson, then ask Zylo to turn it into a project task.</p>}
       </div>
     </section>
   );
