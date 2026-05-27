@@ -472,11 +472,16 @@ async function renderScene(scene: RenderManifest["slide_manifest"][number], inde
       "1:a",
       ...outputArgs,
     ]);
-  } catch {
+  } catch (overlayError) {
+    console.warn("[lesson-renderer] zylo overlay failed; rendering scene without overlay", {
+      scene_id: scene.scene_id,
+      error: overlayError instanceof Error ? overlayError.message : "Unknown overlay error",
+    });
+
     await execFileAsync(ffmpegPath(), [
       ...baseArgs,
       "-vf",
-      "format=yuv420p",
+      slideFilter,
       ...outputArgs,
     ]);
   }

@@ -37,7 +37,7 @@ const APP_URL = process.env.LESSON_RENDERER_APP_URL || process.env.NEXT_PUBLIC_A
 const WORKER_SECRET = process.env.LESSON_RENDERER_SECRET;
 const WORKER_ID = process.env.LESSON_RENDERER_WORKER_ID || `lesson-render-worker-${process.pid}`;
 const POLL_MS = Number(process.env.LESSON_RENDERER_POLL_MS || 5000);
-const JOB_TIMEOUT_MS = Number(process.env.LESSON_RENDERER_JOB_TIMEOUT_MS || 10 * 60 * 1000);
+const JOB_TIMEOUT_MS = Number(process.env.LESSON_RENDERER_JOB_TIMEOUT_MS || 20 * 60 * 1000);
 const BATCH_SIZE = Number(process.env.LESSON_RENDERER_BATCH_SIZE || 1);
 const BACKOFF_BASE_SECONDS = Number(process.env.LESSON_RENDERER_BACKOFF_BASE_SECONDS || 30);
 
@@ -197,6 +197,21 @@ async function completeJob(job, result) {
   }
 }
 
+function renderIsCompleted(render) {
+  return render?.status === "completed" || Boolean(render?.mp4_url && render?.render_json?.local_renderer_completed);
+}
+
+async function fetchRender(renderId) {
+  const { data, error } = await supabase
+    .from("lesson_renders")
+    .select("*")
+    .eq("id", renderId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 async function failOrRetryJob(job, error) {
   const attempts = Number(job.attempts || 1);
   const maxAttempts = Number(job.max_attempts || 3);
@@ -250,6 +265,12 @@ async function processJob(job) {
     log("job_completed", { job_id: claimed.id, render_id: claimed.render_id });
   } catch (error) {
     await appendJobLog(claimed, jobLog("renderer_error", error instanceof Error ? error.message : String(error)));
+    const render = await fetchRender(claimed.render_id);
+    if (renderIsCompleted(render)) {
+      await completeJob(claimed, { render });
+      log("job_completed_after_fetch_error", { job_id: claimed.id, render_id: claimed.render_id });
+      return;
+    }
     await failOrRetryJob(claimed, error);
     log("job_failed_or_retried", {
       job_id: claimed.id,

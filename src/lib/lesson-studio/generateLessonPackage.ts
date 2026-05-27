@@ -164,6 +164,10 @@ Every lesson MUST also contain a matching first-class tasks array with 5-7 task 
 Every lesson MUST include teaching_sequence before tasks. It must teach the concept with: cinematic hook, why it matters, mental model, I do, we do, you do, common mistake, recap.
 teaching_sequence MUST be more detailed than headings. Use relatable examples, step-by-step explanation, concrete visuals, and simple language for ages 8-21.
 The teaching_sequence should prepare the student for the guided tasks, not replace the tasks.
+lesson_blocks are student-facing lesson material only. Do not write lesson_blocks as AI notes, prompt instructions, generation guidelines, or internal scaffolding.
+lesson_blocks MUST read like an actual lesson directed to the student, with clear explanations, relatable examples, diagrams, and small practical prompts.
+lesson_blocks MUST NOT use titles like "Hook", "Teaching Steps", "I do", "We do", "You do", "Watch out", or "Recap".
+Good lesson_blocks titles include "What you're building", "The big idea", "A real-world example", "How it works", "Try this small idea", and "Before you start".
 Each tasks item MUST include task_id, title, instruction, video_url, action, checkpoint_types, checkpoint_type, and ai_verification_criteria.
 Each checkpoint_types array MUST include one or more of: screenshot, file, link, text. checkpoint_type MUST equal the first checkpoint_types value for backward compatibility.
 The quiz MUST contain the exact number of questions requested in the Lesson Brief. Do not return an empty quiz.

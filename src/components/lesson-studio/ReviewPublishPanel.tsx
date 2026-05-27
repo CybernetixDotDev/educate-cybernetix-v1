@@ -3,7 +3,7 @@
 import { publishReviewedLesson, saveReviewEdits, setLessonReviewStatus } from "@/lib/lesson-studio/reviewPublish";
 import type { PublishStatus } from "@/components/lesson-studio/PublishStatusPanel";
 import type { LessonBrief, LessonGeneratorOutput, LessonRender, LessonReviewStatus, LessonStoryboard, PublishTarget } from "@/lib/lesson-studio/types";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type ReviewPublishPanelProps = {
   lesson: LessonGeneratorOutput | null;
@@ -15,6 +15,7 @@ type ReviewPublishPanelProps = {
   onStatus: (message: string) => void;
   onError: (message: string) => void;
   onPublished?: (status: PublishStatus) => void;
+  onPublishTargetChange?: (target: PublishTarget) => void;
 };
 
 type ActionConfirmation = {
@@ -82,6 +83,7 @@ export function ReviewPublishPanel({
   onStatus,
   onError,
   onPublished,
+  onPublishTargetChange,
 }: ReviewPublishPanelProps) {
   const [lessonText, setLessonText] = useState(() => JSON.stringify(lesson, null, 2));
   const [storyboardText, setStoryboardText] = useState(() => JSON.stringify(storyboard, null, 2));
@@ -111,6 +113,10 @@ export function ReviewPublishPanel({
       return null;
     }
   }, [lesson, lessonText, quizText]);
+
+  useEffect(() => {
+    onPublishTargetChange?.(target);
+  }, [onPublishTargetChange, target]);
 
   function syncEditors() {
     setLessonText(JSON.stringify(lesson, null, 2));
