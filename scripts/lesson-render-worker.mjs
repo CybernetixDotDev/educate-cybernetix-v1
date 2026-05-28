@@ -40,6 +40,8 @@ const POLL_MS = Number(process.env.LESSON_RENDERER_POLL_MS || 5000);
 const JOB_TIMEOUT_MS = Number(process.env.LESSON_RENDERER_JOB_TIMEOUT_MS || 20 * 60 * 1000);
 const BATCH_SIZE = Number(process.env.LESSON_RENDERER_BATCH_SIZE || 1);
 const BACKOFF_BASE_SECONDS = Number(process.env.LESSON_RENDERER_BACKOFF_BASE_SECONDS || 30);
+const RECOVERY_POLL_MS = Number(process.env.LESSON_RENDERER_RECOVERY_POLL_MS || 10000);
+const RECOVERY_TIMEOUT_MS = Number(process.env.LESSON_RENDERER_RECOVERY_TIMEOUT_MS || 10 * 60 * 1000);
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   console.error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
@@ -212,6 +214,26 @@ async function fetchRender(renderId) {
   return data;
 }
 
+async function waitForRenderAfterConnectionDrop(renderId) {
+  const deadline = Date.now() + RECOVERY_TIMEOUT_MS;
+
+  while (Date.now() < deadline && !shuttingDown) {
+    const render = await fetchRender(renderId);
+
+    if (renderIsCompleted(render)) {
+      return { status: "completed", render };
+    }
+
+    if (render?.status === "failed") {
+      return { status: "failed", render };
+    }
+
+    await sleep(RECOVERY_POLL_MS);
+  }
+
+  return { status: "timeout", render: await fetchRender(renderId) };
+}
+
 async function failOrRetryJob(job, error) {
   const attempts = Number(job.attempts || 1);
   const maxAttempts = Number(job.max_attempts || 3);
@@ -271,6 +293,37 @@ async function processJob(job) {
       log("job_completed_after_fetch_error", { job_id: claimed.id, render_id: claimed.render_id });
       return;
     }
+
+    if (error instanceof Error && /fetch failed|aborted|terminated|ECONNRESET|UND_ERR/i.test(error.message)) {
+      log("job_connection_dropped_waiting_for_render", {
+        job_id: claimed.id,
+        render_id: claimed.render_id,
+        recovery_timeout_ms: RECOVERY_TIMEOUT_MS,
+      });
+
+      await appendJobLog(
+        claimed,
+        jobLog("connection_dropped_waiting", "Renderer connection dropped. Worker is polling the render row before retrying."),
+      );
+
+      const recovery = await waitForRenderAfterConnectionDrop(claimed.render_id);
+      if (recovery.status === "completed") {
+        await completeJob(claimed, { render: recovery.render });
+        log("job_completed_after_connection_drop", { job_id: claimed.id, render_id: claimed.render_id });
+        return;
+      }
+
+      if (recovery.status === "failed") {
+        await failOrRetryJob(claimed, new Error(recovery.render?.error_message || error.message));
+        log("job_failed_or_retried_after_render_failure", {
+          job_id: claimed.id,
+          render_id: claimed.render_id,
+          error: recovery.render?.error_message || error.message,
+        });
+        return;
+      }
+    }
+
     await failOrRetryJob(claimed, error);
     log("job_failed_or_retried", {
       job_id: claimed.id,

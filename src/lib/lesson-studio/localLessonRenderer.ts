@@ -182,12 +182,13 @@ async function generateTtsAudio(text: string, fallbackPath: string, durationSeco
 
 function ffmpegText(value: string) {
   return value
-    .replaceAll("\\", "\\\\")
-    .replaceAll(":", "\\:")
-    .replaceAll("'", "\\'")
-    .replaceAll(",", "\\,")
-    .replaceAll("[", "\\[")
-    .replaceAll("]", "\\]");
+    .replace(/[\u2018\u2019]/g, "")
+    .replace(/[\u201C\u201D]/g, "")
+    .replace(/['"\\]/g, "")
+    .replace(/:/g, " -")
+    .replace(/,/g, ";")
+    .replace(/[()[\]{}]/g, "")
+    .replace(/[^\x20-\x7E]/g, "-");
 }
 
 function filterText(value: string, maxLength = 48) {
@@ -339,7 +340,7 @@ function metaphorDiagramFilters(scene: RenderManifest["slide_manifest"][number],
     "drawtext=text='FLOW':x=482:y=364:fontsize=30:fontcolor=0f766e",
     "drawtext=text='RESULT':x=780:y=364:fontsize=30:fontcolor=7c3aed",
     ...lines.map((line, lineIndex) => `drawtext=text='${filterText(line, 62)}':x=104:y=${500 + lineIndex * 34}:fontsize=22:fontcolor=334155`),
-    "drawtext=text='Mental model: understand the path before you build.':x=104:y=622:fontsize=22:fontcolor=2563eb",
+    `drawtext=text='${filterText("Mental model - understand the path before you build.", 64)}':x=104:y=622:fontsize=22:fontcolor=2563eb`,
     "format=yuv420p",
   ];
 
